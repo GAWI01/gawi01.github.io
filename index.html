@@ -1,14 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Gabriel Witzøe — cybersecurity, software and AI projects.">
+    <title>Gabriel Witzøe — gawi.no</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">gawi.no</p>
+        <h1>Gabriel Witzøe</h1>
+        <p class="specialties">Cybersecurity <span>·</span> Software <span>·</span> AI</p>
+        <p class="intro">Building practical tools, software and security projects.</p>
+      </header>
 
-  <title>Gabriel Witzøe</title>
-</head>
+      <section class="projects" aria-labelledby="projects-title">
+        <div class="section-heading">
+          <p class="eyebrow">Selected work</p>
+          <h2 id="projects-title">Projects</h2>
+        </div>
 
-<body>
-  <h1>Gabriel Witzøe</h1>
-  <p>Cybersecurity junior. Building things.</p>
-</body>
+        <div class="project-grid">
+          <a class="project-card" href="https://fpl.gawi.no" aria-label="Visit FPL-AI">
+            <div class="project-card__topline">
+              <h3>FPL-AI</h3>
+              <span class="status status--active">Active project</span>
+            </div>
+            <p>Fantasy Premier League analysis tool using data and statistics to support transfer, captaincy and squad decisions.</p>
+            <span class="stack">Python <b>·</b> FastAPI <b>·</b> Next.js <b>·</b> TypeScript</span>
+            <span class="card-link">Visit FPL-AI <span aria-hidden="true">↗</span></span>
+          </a>
+
+          <a class="project-card" href="https://bajazzo.gawi.no" target="_blank" rel="noreferrer">
+            <div class="project-card__topline">
+              <h3>Bajazzo</h3>
+              <span class="status">Prototype / In development</span>
+            </div>
+            <p>Prototype restaurant and catering platform in development, exploring online ordering, product management and administrative functionality.</p>
+            <span class="stack">Next.js <b>·</b> Supabase <b>·</b> Vercel</span>
+            <span class="card-link">Visit Bajazzo <span aria-hidden="true">↗</span></span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>© <span>2026</span> Gabriel Witzøe</p>
+      <nav aria-label="Social links">
+        <a href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn</a>
+      </nav>
+    </footer>
+  </body>
 </html>
