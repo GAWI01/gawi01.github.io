@@ -1,0 +1,16 @@
+(() => {
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const progress = document.querySelector('.scroll-progress span'), header = document.querySelector('.site-header'), glow = document.querySelector('.cursor-glow');
+  const update = () => { const max = document.documentElement.scrollHeight - innerHeight; progress.style.width = `${max ? scrollY / max * 100 : 0}%`; header.classList.toggle('scrolled', scrollY > 28); };
+  addEventListener('scroll', update, { passive:true }); update();
+  if (!reduced) {
+    addEventListener('pointermove', e => { glow.style.left=`${e.clientX}px`; glow.style.top=`${e.clientY}px`; }, { passive:true });
+    document.querySelectorAll('[data-tilt]').forEach(card => { card.addEventListener('pointermove', e => { const r=card.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; card.style.transform=`perspective(1000px) rotateX(${-y*3}deg) rotateY(${x*3}deg) translateY(-3px)`; }); card.addEventListener('pointerleave',()=>card.style.transform=''); });
+    const observer = new IntersectionObserver(entries => entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');observer.unobserve(e.target)}}),{threshold:.12}); document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+  } else document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in-view'));
+  const palette=document.querySelector('.palette'), trigger=document.querySelector('.command-trigger'), input=palette.querySelector('input'), commands=[...palette.querySelectorAll('[role="option"]')]; let active=0;
+  const draw=()=>commands.forEach((c,i)=>c.classList.toggle('active',i===active)); const open=()=>{palette.classList.add('open');palette.setAttribute('aria-hidden','false');input.value='';active=0;draw();input.focus()}; const close=()=>{palette.classList.remove('open');palette.setAttribute('aria-hidden','true');trigger.focus()};
+  trigger.addEventListener('click',open); palette.addEventListener('click',e=>{if(e.target===palette)close()}); input.addEventListener('input',()=>{const q=input.value.toLowerCase();commands.forEach(c=>c.hidden=!c.textContent.toLowerCase().includes(q));active=Math.max(0,commands.findIndex(c=>!c.hidden));draw()});
+  addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();palette.classList.contains('open')?close():open()}if(e.key==='Escape'&&palette.classList.contains('open'))close();if(!palette.classList.contains('open'))return;const shown=commands.filter(c=>!c.hidden);if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();const n=(shown.indexOf(commands[active])+(e.key==='ArrowDown'?1:-1)+shown.length)%shown.length;active=commands.indexOf(shown[n]);draw()}if(e.key==='Enter'&&document.activeElement===input){e.preventDefault();commands[active]?.click()}}); commands.forEach(c=>c.addEventListener('click',close));
+  const code=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];let keys=[];addEventListener('keydown',e=>{keys=[...keys,e.key].slice(-code.length);if(keys.join('|').toLowerCase()===code.join('|').toLowerCase()){const egg=document.querySelector('.egg');egg.classList.add('show');setTimeout(()=>egg.classList.remove('show'),3500);keys=[]}});
+})();
