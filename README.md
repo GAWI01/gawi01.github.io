@@ -2,7 +2,7 @@
 
 Personal cybersecurity and software portfolio at [gawi.no](https://gawi.no), built as a 3D arcade you walk into.
 
-Each arcade machine is a section (About, Projects, FPL-AI, Bajazzo, Contact). Click one and the camera flies up to it until its screen fills the window and becomes the page. Back (button, `Esc` or the browser) flies you out again.
+Each arcade machine is a section (About, Projects, Fantasy Football AI, Bajazzo, Contact). Click one and the camera flies up to it until its screen fills the window and becomes the page. Back (button, `Esc` or the browser) flies you out again.
 
 The room also has things to play with:
 
@@ -26,7 +26,7 @@ npm run preview  # serve the built site
 - `src/games/snake.js` is the Snake game, shared by both modes.
 - `src/arcade/` is the 3D room: Three.js, `postprocessing` for bloom/tone mapping, GSAP for camera flights. Everything (cabinets, neon, screen animations, sound) is generated in code; there are no model or audio files. `hoops.js` has the basketball machine and its small ball physics, `props.js` the air hockey table.
 
-URL options: `?mode=2d` / `?mode=3d` force a mode, `?quality=low|medium|high` forces a render tier, `#/fpl-ai` (or any section id) deep-links straight to a machine.
+URL options: `?mode=2d` / `?mode=3d` force a mode, `?quality=low|medium|high` forces a render tier, `#/fantasy-football-ai` (or any section id; the old `#/fpl-ai` still works) deep-links straight to a machine.
 
 ## Deploy
 

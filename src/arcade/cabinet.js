@@ -128,8 +128,19 @@ function marqueeTexture(text, color) {
   ctx.strokeStyle = withAlpha(color, 0.5);
   ctx.lineWidth = 6;
   ctx.strokeRect(14, 14, 996, 372);
-  const size = Math.min(96, Math.floor(880 / (text.length * 0.95)));
-  drawNeonText(ctx, text, 512, 196, { color, font: PIXEL_FONT, size });
+  // Long names go on two lines, split at the space nearest the middle, so they stay big enough to read.
+  const lines = [text];
+  if (text.length > 12 && text.includes(' ')) {
+    const spaces = [...text.matchAll(/ /g)].map((m) => m.index);
+    const cut = spaces.reduce((best, i) => (Math.abs(i - text.length / 2) < Math.abs(best - text.length / 2) ? i : best));
+    lines.splice(0, 1, text.slice(0, cut), text.slice(cut + 1));
+  }
+  const longest = Math.max(...lines.map((line) => line.length));
+  const size = Math.min(lines.length > 1 ? 74 : 96, Math.floor(880 / (longest * 0.95)));
+  lines.forEach((line, i) => {
+    const y = lines.length > 1 ? 140 + i * 104 : 196;
+    drawNeonText(ctx, line, 512, y, { color, font: PIXEL_FONT, size });
+  });
   ctx.font = `34px ${CRT_FONT}`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,0.65)';

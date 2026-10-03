@@ -24,9 +24,13 @@ document.addEventListener('click', (event) => {
   if (toggle) setMode(toggle.dataset.setMode);
 });
 
+// Old addresses that still work after a section was renamed.
+const HASH_ALIASES = { 'fpl-ai': 'fantasy-football-ai' };
+
 function sectionIdFromHash() {
   const match = location.hash.match(/^#\/?([\w-]*)/);
-  return match ? match[1] : '';
+  const id = match ? match[1] : '';
+  return HASH_ALIASES[id] || id;
 }
 
 function mountSiteGames() {
