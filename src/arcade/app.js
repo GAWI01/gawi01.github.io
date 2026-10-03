@@ -18,7 +18,7 @@ import { CameraDirector } from './director.js';
 import { ArcadeAudio } from './audio.js';
 import { screenBackground, mixWithWhite, radialShadowTexture } from './textures.js';
 import { HoopsMachine } from './hoops.js';
-import { createClawMachine, createAirHockey } from './props.js';
+import { createAirHockey } from './props.js';
 import { mountSnake } from '../games/snake.js';
 
 const TIERS = {
@@ -29,10 +29,9 @@ const TIERS = {
 const TIER_ORDER = ['high', 'medium', 'low'];
 
 // Placement of everything that is not on the main arc (x, z, rotation about y).
-// Hoops stands along the left wall, the air hockey table along the right, the claw machine in a corner.
+// Hoops stands along the left wall, the air hockey table along the right.
 const LAYOUT = {
   hoops: { pos: [-3.75, 0, 0.85], rot: Math.PI / 2 },
-  claw: { pos: [5.85, 0, -4.5], rot: -0.6 },
   hockey: { pos: [5.55, 0, 0.5], rot: 0 },
 };
 
@@ -145,7 +144,6 @@ export async function startArcade({ sectionIdFromHash }) {
   scene.add(hoops.group);
 
   const props = [
-    [createClawMachine(), LAYOUT.claw],
     [createAirHockey(), LAYOUT.hockey],
   ].map(([prop, spot]) => {
     prop.group.position.set(...spot.pos);
@@ -223,7 +221,7 @@ export async function startArcade({ sectionIdFromHash }) {
   function updateHomeFraming() {
     const aspect = window.innerWidth / window.innerHeight;
     // Keep the whole arc in frame: widen the lens and step back on narrow screens.
-    // Stand back far enough to take in the corners: hoops on the left, Snake and the claw on the right.
+    // Stand back far enough to take in the corners: hoops on the left, air hockey on the right.
     const needHalf = THREE.MathUtils.degToRad(39.5);
     const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(needHalf) / aspect));
     director.home.fov = THREE.MathUtils.clamp(fov, 48, 80);
