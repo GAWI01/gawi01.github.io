@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: hashFiles('package.json') != ''
         with:
-          node-version: 20
+          node-version: 22
           cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
 
       - name: Build with Vite
