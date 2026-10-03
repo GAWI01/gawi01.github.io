@@ -4,7 +4,7 @@ import { makeCanvas, canvasTexture, drawNeonText, withAlpha, PIXEL_FONT, CRT_FON
 
 /*
  * Ambient props that make the room read as a real arcade: a claw machine that plays
- * itself, an air hockey table with a ghost match, and a prize counter.
+ * itself, an air hockey table with a ghost match.
  * Each prop is { group, lit, color, update(time, dt) } and is lit by the intro like the cabinets.
  */
 
@@ -376,96 +376,6 @@ export function createAirHockey() {
       if (v.length() < 0.6) v.setLength(0.6);
       puck.position.x = pp.x;
       puck.position.z = pp.y;
-    },
-  };
-}
-
-export function createPrizeCounter() {
-  const color = '#ffd166';
-  const group = new THREE.Group();
-  group.name = 'prize-counter';
-  const body = bodyMat();
-  const L = 1.9;
-  const D = 0.6;
-  const H = 1.0;
-  const base = new THREE.Mesh(new THREE.BoxGeometry(L, 0.4, D), body);
-  base.position.y = 0.2;
-  group.add(base);
-  const glass = glassMat();
-  for (const [w, h, x, y, z, rx, ry] of [
-    [L, H - 0.4, 0, 0.7, D / 2, 0, 0],
-    [L, H - 0.4, 0, 0.7, -D / 2, 0, 0],
-    [D, H - 0.4, L / 2, 0.7, 0, 0, Math.PI / 2],
-    [D, H - 0.4, -L / 2, 0.7, 0, 0, Math.PI / 2],
-    [L, D, 0, H, 0, Math.PI / 2, 0],
-  ]) {
-    const pane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glass);
-    pane.position.set(x, y, z);
-    pane.rotation.set(rx, ry, 0);
-    pane.renderOrder = 2;
-    group.add(pane);
-  }
-  const edgeMat = glowMaterial(color, 0);
-  for (const [w, d, z] of [[L, 0.015, D / 2], [L, 0.015, -D / 2]]) {
-    const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.015, d), edgeMat);
-    edge.position.set(0, H, z);
-    group.add(edge);
-    const low = edge.clone();
-    low.position.y = 0.4;
-    group.add(low);
-  }
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(L - 0.04, 0.015, D - 0.04), new THREE.MeshStandardMaterial({ color: '#c9d6ff', transparent: true, opacity: 0.25, roughness: 0.1 }));
-  shelf.position.y = 0.66;
-  group.add(shelf);
-  const glowStrip = glowMaterial('#fff3d6', 0);
-  const strip = new THREE.Mesh(new THREE.PlaneGeometry(L - 0.1, 0.03), glowStrip);
-  strip.rotation.x = Math.PI / 2;
-  strip.position.set(0, H - 0.01, -D / 2 + 0.06);
-  group.add(strip);
-
-  // Prizes: a mix of shapes in candy colours, two rows on two levels.
-  const shapes = [
-    new THREE.TorusKnotGeometry(0.035, 0.012, 48, 6),
-    new THREE.OctahedronGeometry(0.05),
-    new THREE.BoxGeometry(0.07, 0.07, 0.07),
-    new THREE.SphereGeometry(0.045, 16, 10),
-    new THREE.TorusGeometry(0.04, 0.014, 8, 20),
-  ];
-  const prizeMats = PLUSH.map((c) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0, roughness: 0.35, metalness: 0.3 }));
-  const prizes = [];
-  let n = 0;
-  for (const y of [0.47, 0.73]) {
-    for (let i = 0; i < 9; i++) {
-      const mesh = new THREE.Mesh(shapes[n % shapes.length], prizeMats[(n * 3) % prizeMats.length]);
-      mesh.position.set(-L / 2 + 0.16 + i * ((L - 0.32) / 8), y + 0.05, (n % 2 ? 0.08 : -0.06));
-      mesh.rotation.set(n * 0.7, n * 1.3, 0);
-      group.add(mesh);
-      prizes.push(mesh);
-      n++;
-    }
-  }
-  // Neon sign on a stand above the counter.
-  const signMat = glowMaterial('#ffffff', 0, { map: signTexture('PRIZES', color, '1000 TICKETS = ★', { w: 512, h: 200, size: 56 }), transparent: true });
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.43), signMat);
-  sign.position.set(0, H + 0.95, -D / 2 + 0.05);
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.75, 8), metalMat());
-  pole.position.set(0, H + 0.38, -D / 2 + 0.05);
-  group.add(sign, pole);
-
-  return {
-    group,
-    color,
-    lit: 0,
-    poolAt: new THREE.Vector3(0, 0, 0.6),
-    update(time, dt) {
-      const lit = this.lit;
-      setGlow(edgeMat, lit * 1.3);
-      setGlow(glowStrip, lit * 2);
-      setGlow(signMat, lit * (Math.sin(time * 0.9) > 0.97 ? 0.4 : 1.2));
-      for (const mat of prizeMats) mat.emissiveIntensity = lit * 0.35;
-      prizes.forEach((mesh, i) => {
-        mesh.rotation.y += dt * (0.3 + (i % 3) * 0.1);
-      });
     },
   };
 }

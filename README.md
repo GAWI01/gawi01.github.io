@@ -8,7 +8,7 @@ The room also has things to play with:
 
 - **Snake** (`#/snake`): a working Snake machine. Arrow keys, WASD, swipe or the on-screen pad. The same game is playable in the 2D site.
 - **Hoops** (`#/hoops`): a pop-a-shot basketball machine. Hold to charge, let go in the green, aim with the mouse (or drag sideways on touch, arrow keys on a keyboard). 45 seconds, 2 points a basket, best score is remembered.
-- A self-playing claw machine, an air hockey table with a ghost match, and a prize counter.
+- A self-playing claw machine and an air hockey table with a ghost match.
 
 ## Develop
 
@@ -24,7 +24,7 @@ npm run preview  # serve the built site
 - `index.html` holds all the content as plain HTML sections. That is the light 2D site (used without WebGL, on phones and low-end devices, or via the "2D view" button) and the source the arcade screens are filled from, so text only lives in one place.
 - `src/main.js` picks the mode and lazy-loads the 3D app, so the 2D site never downloads Three.js.
 - `src/games/snake.js` is the Snake game, shared by both modes.
-- `src/arcade/` is the 3D room: Three.js, `postprocessing` for bloom/tone mapping, GSAP for camera flights. Everything (cabinets, neon, screen animations, sound) is generated in code; there are no model or audio files. `hoops.js` has the basketball machine and its small ball physics, `props.js` the claw machine, air hockey table and prize counter.
+- `src/arcade/` is the 3D room: Three.js, `postprocessing` for bloom/tone mapping, GSAP for camera flights. Everything (cabinets, neon, screen animations, sound) is generated in code; there are no model or audio files. `hoops.js` has the basketball machine and its small ball physics, `props.js` the claw machine and air hockey table.
 
 URL options: `?mode=2d` / `?mode=3d` force a mode, `?quality=low|medium|high` forces a render tier, `#/fpl-ai` (or any section id) deep-links straight to a machine.
 

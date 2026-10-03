@@ -22,17 +22,6 @@ const AVATAR = [
   '....d..d....',
 ];
 
-const INVADER = [
-  '..x.....x..',
-  '...x...x...',
-  '..xxxxxxx..',
-  '.xx.xxx.xx.',
-  'xxxxxxxxxxx',
-  'x.xxxxxxx.x',
-  'x.x.....x.x',
-  '...xx.xx...',
-];
-
 function drawSprite(ctx, rows, x, y, scale, palette) {
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
@@ -76,7 +65,6 @@ export class ArcadeScreen {
     this.time = 0;
     this.rand = rng(type.length * 977 + label.length * 131);
     this.stars = Array.from({ length: 70 }, () => ({ x: this.rand() * W, y: this.rand() * H, s: 0.3 + this.rand() * 1.7 }));
-    this.noise = makeCanvas(128, 96);
   }
 
   setMode(mode) {
@@ -389,42 +377,6 @@ export class ArcadeScreen {
     this.scoreBar('2UP');
   }
 
-  draw_invaders(t) {
-    const ctx = this.ctx;
-    this.scoreBar();
-    const shift = Math.round(Math.sin(t * 0.8) * 40);
-    const frameDrop = Math.floor(t * 2) % 2;
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 7; c++) {
-        const colors = { x: r === 0 ? '#ff4fa3' : r === 1 ? '#4cc9ff' : this.color };
-        drawSprite(ctx, INVADER, 70 + c * 54 + shift, 60 + r * 40 + frameDrop * 2, 3, colors);
-      }
-    }
-    const shipX = W / 2 + Math.sin(t * 1.3) * 160;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(shipX - 16, 330, 32, 8);
-    ctx.fillRect(shipX - 4, 322, 8, 8);
-    const shot = (t * 1.6) % 1;
-    ctx.fillRect(shipX - 1, 316 - shot * 200, 3, 10);
-    ctx.fillStyle = withAlpha(this.color, 0.5);
-    ctx.fillRect(0, 350, W, 2);
-  }
-
-  draw_pong(t) {
-    const ctx = this.ctx;
-    ctx.fillStyle = withAlpha('#ffffff', 0.4);
-    for (let y = 10; y < H; y += 24) ctx.fillRect(W / 2 - 2, y, 4, 12);
-    const bx = W / 2 + Math.sin(t * 1.7) * 210;
-    const by = H / 2 + Math.sin(t * 2.9) * 150;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(bx - 5, by - 5, 10, 10);
-    ctx.fillRect(28, by - 30 + Math.sin(t * 3) * 14, 10, 60);
-    ctx.fillRect(W - 38, by - 30 - Math.sin(t * 2.6) * 14, 10, 60);
-    this.text(String(Math.floor(t / 7) % 10), W / 2 - 50, 20, { size: 32, align: 'center', color: '#ffffff' });
-    this.text(String(Math.floor(t / 9) % 10), W / 2 + 50, 20, { size: 32, align: 'center', color: '#ffffff' });
-  }
-
-  /** Attract mode for the Snake machine: a greedy little AI plays forever. */
   draw_snake(t) {
     const ctx = this.ctx;
     const cols = 24;
@@ -488,22 +440,5 @@ export class ArcadeScreen {
     });
     ctx.restore();
     if (this.blink(0.9)) this.text('PRESS START', W / 2, 356, { size: 12, align: 'center', color: '#ffffff', glow: 6 });
-  }
-
-  draw_static() {
-    const { canvas, ctx } = this.noise;
-    const image = ctx.createImageData(canvas.width, canvas.height);
-    for (let i = 0; i < image.data.length; i += 4) {
-      const v = Math.random() * 120;
-      image.data[i] = image.data[i + 1] = image.data[i + 2] = v;
-      image.data[i + 3] = 255;
-    }
-    ctx.putImageData(image, 0, 0);
-    this.ctx.imageSmoothingEnabled = false;
-    this.ctx.drawImage(canvas, 0, 0, W, H);
-    this.ctx.fillStyle = 'rgba(0,0,0,0.75)';
-    this.ctx.fillRect(96, 150, 320, 84);
-    this.text('OUT OF ORDER', W / 2, 172, { size: 18, align: 'center', color: '#ff5a4f', glow: 10 });
-    this.text('SORRY, PLAYER', W / 2, 202, { size: 22, font: CRT_FONT, align: 'center', color: '#ffffff', glow: 2 });
   }
 }
