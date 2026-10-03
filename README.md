@@ -6,7 +6,7 @@ Each arcade machine is a section (About, Projects, FPL-AI, Bajazzo, Contact). Cl
 
 The room also has things to play with:
 
-- **Snake** (`#/snake`): a working Snake machine. Arrow keys, WASD, swipe or the on-screen pad. The same game is playable in the 2D site.
+- **Snake** (`#/snake`): a working Snake machine, standing in the arc with the section cabinets. Arrow keys, WASD, swipe or the on-screen pad. The same game is playable in the 2D site.
 - **Hoops** (`#/hoops`): a pop-a-shot basketball machine. Hold to charge, let go in the green, aim with the mouse (or drag sideways on touch, arrow keys on a keyboard). 45 seconds, 2 points a basket, best score is remembered.
 - A self-playing claw machine and an air hockey table with a ghost match.
 

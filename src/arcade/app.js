@@ -29,12 +29,11 @@ const TIERS = {
 const TIER_ORDER = ['high', 'medium', 'low'];
 
 // Placement of everything that is not on the main arc (x, z, rotation about y).
-// The games stand along the side walls; the corners hold the claw machine and the air hockey table.
+// Hoops stands along the left wall, the air hockey table along the right, the claw machine in a corner.
 const LAYOUT = {
-  snake: { pos: [5.75, 0, 0.5], rot: -Math.PI / 2 },
   hoops: { pos: [-3.75, 0, 0.85], rot: Math.PI / 2 },
-  claw: { pos: [5.2, 0, -3.75], rot: -0.6 },
-  hockey: { pos: [-4.6, 0, -3.4], rot: -0.6 },
+  claw: { pos: [5.85, 0, -4.5], rot: -0.6 },
+  hockey: { pos: [5.55, 0, 0.5], rot: 0 },
 };
 
 function pickQuality(renderer) {
@@ -123,35 +122,22 @@ export async function startArcade({ sectionIdFromHash }) {
     marquee: sec.dataset.marquee,
     screen: sec.dataset.screen,
     color: sec.style.getPropertyValue('--c').trim(),
-    game: sec.dataset.game || null,
     el: sec,
   }));
-  const arcSections = sections.filter((section) => !section.game);
 
-  // Main cabinets on an arc facing the player.
+  // All cabinets, Snake included, stand on one arc facing the player, evenly spaced.
   const arcCenter = new THREE.Vector3(0, 0, 0.4);
-  const arcRadius = 4.2;
-  const spread = THREE.MathUtils.degToRad(92);
-  const arcCabinets = arcSections.map((section, i) => {
+  const arcRadius = 4.6;
+  const spread = THREE.MathUtils.degToRad(100);
+  const cabinets = sections.map((section, i) => {
     const cab = new Cabinet(section);
-    const angle = arcSections.length > 1 ? -spread / 2 + (spread * i) / (arcSections.length - 1) : 0;
+    const angle = sections.length > 1 ? -spread / 2 + (spread * i) / (sections.length - 1) : 0;
     cab.group.position.set(arcCenter.x + Math.sin(angle) * arcRadius, 0, arcCenter.z - Math.cos(angle) * arcRadius);
     cab.group.rotation.y = -angle;
     cab.section = section;
     scene.add(cab.group);
     return cab;
   });
-  // Game cabinets (Snake) stand on their own in the room.
-  const gameCabinets = sections.filter((section) => section.game).map((section) => {
-    const cab = new Cabinet(section);
-    const spot = LAYOUT[section.game] || LAYOUT.snake;
-    cab.group.position.set(...spot.pos);
-    cab.group.rotation.y = spot.rot;
-    cab.section = section;
-    scene.add(cab.group);
-    return cab;
-  });
-  const cabinets = [...arcCabinets, ...gameCabinets];
 
   const hoops = new HoopsMachine();
   hoops.group.position.set(...LAYOUT.hoops.pos);
