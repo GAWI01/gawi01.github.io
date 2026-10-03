@@ -155,6 +155,24 @@ export async function startArcade({ sectionIdFromHash }) {
   // Everything the player can walk up to: screen cabinets and the hoops game.
   const machines = [...cabinets, hoops];
   const byId = Object.fromEntries(machines.map((c) => [c.id, c]));
+
+  // On small screens the marquees are only a few pixels tall, so each machine also gets a crisp
+  // HTML name tag that follows it around the room.
+  const smallScreen = matchMedia('(max-width: 760px), (max-height: 520px)');
+  const nameTags = document.createElement('div');
+  nameTags.className = 'name-tags';
+  nameTags.setAttribute('aria-hidden', 'true');
+  const tagFor = new Map(machines.map((cab, i) => {
+    const tag = document.createElement('span');
+    // Neighbours sit close together on a phone, so every other tag drops a row.
+    tag.dataset.row = String(i % 2);
+    tag.className = 'name-tag';
+    tag.textContent = cab.label;
+    tag.style.setProperty('--c', cab.color);
+    nameTags.append(tag);
+    return [cab, tag];
+  }));
+  el.arcade.append(nameTags);
   scene.updateMatrixWorld(true);
 
   // Contact shadows, beams and floor glow per cabinet.
@@ -225,7 +243,7 @@ export async function startArcade({ sectionIdFromHash }) {
     const needHalf = THREE.MathUtils.degToRad(39.5);
     const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(needHalf) / aspect));
     director.home.fov = THREE.MathUtils.clamp(fov, 48, 80);
-    const back = aspect < 1 ? Math.min(1.4, (1 - aspect) * 3) : 0;
+    const back = aspect < 1 ? Math.min(2.6, (1 - aspect) * 4.5) : 0;
     director.home.position.set(0, 1.68 + back * 0.08, 4.2 + back);
     director.home.target.set(0, 1.18, -2.6);
   }
@@ -682,6 +700,25 @@ export async function startArcade({ sectionIdFromHash }) {
   let time = 0;
   let screenClock = 0;
   let last = performance.now();
+  const tagPoint = new THREE.Vector3();
+  function updateNameTags() {
+    const show = smallScreen.matches && state === 'room';
+    nameTags.classList.toggle('is-visible', show);
+    if (!show) return;
+    for (const [cab, tag] of tagFor) {
+      // Pin the tag to the floor just in front of the machine, where the room is empty.
+      const p = tagPoint.set(0, 0, 0.5).applyMatrix4(cab.group.matrixWorld).project(camera);
+      const onScreen = p.z < 1 && p.x > -1.1 && p.x < 1.1 && p.y > -1 && p.y < 1;
+      tag.classList.toggle('is-hidden', !onScreen || cab === hovered);
+      if (!onScreen) continue;
+      // Keep tags of machines at the edge fully on screen.
+      // Measured once (the text never changes) so the loop does not force a layout every frame.
+      const half = Number(tag.dataset.half) || (tag.dataset.half = tag.offsetWidth / 2 + 4);
+      const x = THREE.MathUtils.clamp(((p.x + 1) / 2) * window.innerWidth, half, window.innerWidth - half);
+      tag.style.transform = `translate(${x}px, ${((1 - p.y) / 2) * window.innerHeight}px) translate(-50%, ${tag.dataset.row === '1' ? '120%' : '0'})`;
+    }
+  }
+
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
@@ -689,6 +726,7 @@ export async function startArcade({ sectionIdFromHash }) {
     if (paused) return;
     director.update(time, dt);
     updateHover();
+    updateNameTags();
     screenClock += dt;
     const drawScreens = screenClock >= 1 / quality.screenFps;
     if (drawScreens) screenClock = 0;
