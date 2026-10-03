@@ -189,7 +189,7 @@ export class ArcadeScreen {
     this.starfield(8);
     this.text('SELECT STAGE', W / 2, 30, { size: 20, align: 'center', glow: 14 });
     const tiles = [
-      { x: 40, label: 'FPL-AI', sub: 'ACTIVE', color: '#b388ff' },
+      { x: 40, label: 'FANTASY FOOTBALL AI', size: 9, sub: 'ACTIVE', color: '#b388ff' },
       { x: 272, label: 'BAJAZZO', sub: 'PROTOTYPE', color: '#ffad42' },
     ];
     const active = Math.floor(t / 1.6) % 2;
@@ -202,7 +202,7 @@ export class ArcadeScreen {
       ctx.strokeRect(tile.x, y, 200, 180);
       if (i === 0) this.miniPitch(tile.x + 30, y + 22, 140, 92, tile.color, t);
       else this.miniCloche(tile.x + 100, y + 70, tile.color, t);
-      this.text(tile.label, tile.x + 100, y + 128, { size: 14, align: 'center', color: tile.color });
+      this.text(tile.label, tile.x + 100, y + 128 + (14 - (tile.size || 14)) / 2, { size: tile.size || 14, align: 'center', color: tile.color });
       this.text(tile.sub, tile.x + 100, y + 152, { size: 20, font: CRT_FONT, align: 'center', color: '#ffffff', glow: 4 });
       if (i === active) {
         const pulse = this.blink(0.4) ? 1 : 0.5;
@@ -264,7 +264,7 @@ export class ArcadeScreen {
 
   draw_fpl(t) {
     const ctx = this.ctx;
-    this.text('FPL-AI', 18, 16, { size: 16 });
+    this.text('FANTASY FOOTBALL AI', 18, 18, { size: 12 });
     this.text('GW ANALYSIS', W - 18, 12, { size: 22, font: CRT_FONT, align: 'right', color: this.bright, glow: 3 });
     // Pitch with a drifting 4-4-2 formation and a ball pinging between players.
     const px = 18;
