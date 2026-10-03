@@ -316,7 +316,7 @@ export function buildRoom(scene, renderer, quality) {
   const main = neonSign(
     [
       { text: 'GAWI.NO', x: 0.5, y: 0.38, color: '#8ce7bd', size: 160 },
-      { text: '★ ARCADE ★', x: 0.5, y: 0.8, color: '#ff4fa3', size: 70 },
+      { text: '★ PORTFOLIO ★', x: 0.5, y: 0.8, color: '#ff4fa3', size: 70 },
     ],
     { width: 4, height: 1.1 },
   );

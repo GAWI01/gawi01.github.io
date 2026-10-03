@@ -133,7 +133,7 @@ function marqueeTexture(text, color) {
   ctx.font = `34px ${CRT_FONT}`;
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,0.65)';
-  ctx.fillText('GAWI.NO  ·  ARCADE', 512, 340);
+  ctx.fillText('GAWI.NO  ·  PORTFOLIO', 512, 340);
   return canvasTexture(canvas, { anisotropy: 8 });
 }
 
