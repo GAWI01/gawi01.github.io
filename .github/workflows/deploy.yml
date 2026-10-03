@@ -1,17 +1,16 @@
-name: Deploy to GitHub Pages
+name: Build and deploy
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,19 +18,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
+        if: hashFiles('package.json') != ''
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
+          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
+
+      - name: Build with Vite
+        if: hashFiles('package.json') != ''
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run build
+
+      # Until the Vite project lands, publish the static files as they are.
+      - name: Copy static site
+        if: hashFiles('package.json') == ''
+        run: |
+          mkdir -p dist
+          for f in * .[!.]*; do
+            case "$f" in .git|.github|.gitignore|dist|node_modules|README.md) ;; *) cp -r "$f" dist/ ;; esac
+          done
+
+      - name: Add CNAME
+        run: |
+          test -d dist || { echo "Build produced no dist/ folder"; exit 1; }
+          test -f dist/CNAME || cp CNAME dist/CNAME
+          touch dist/.nojekyll
+          echo "Custom domain: $(cat dist/CNAME)"
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
