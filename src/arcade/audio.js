@@ -131,6 +131,57 @@ export class ArcadeAudio {
     this.tone({ freq: 60, to: 40, duration: 0.4, type: 'sine', gain: 0.2, delay: duration - 0.2 });
   }
 
+  /** Basketball: a muffled thump off the lane or walls. */
+  thud(strength = 0.5) {
+    this.tone({ freq: 140, to: 70, duration: 0.12, type: 'sine', gain: 0.12 * strength });
+  }
+
+  rim(strength = 0.5) {
+    this.tone({ freq: 620, to: 540, duration: 0.18, type: 'triangle', gain: 0.05 * strength });
+    this.tone({ freq: 1490, duration: 0.09, type: 'sine', gain: 0.02 * strength });
+  }
+
+  swish() {
+    if (!this.enabled || !this.ctx) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2400;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    src.connect(hp).connect(g).connect(this.master);
+    src.start(t, Math.random() * 2);
+    src.stop(t + 0.3);
+    [784, 988, 1319].forEach((freq, i) => this.tone({ freq, duration: 0.09, gain: 0.03, delay: 0.05 + i * 0.07 }));
+  }
+
+  tick() {
+    this.tone({ freq: 1760, duration: 0.03, gain: 0.025 });
+  }
+
+  buzzer() {
+    this.tone({ freq: 196, duration: 0.9, type: 'sawtooth', gain: 0.05 });
+    this.tone({ freq: 207, duration: 0.9, type: 'sawtooth', gain: 0.04 });
+  }
+
+  /** Snake. */
+  chomp() {
+    this.tone({ freq: 660, to: 990, duration: 0.07, gain: 0.04 });
+  }
+
+  start() {
+    [523, 659, 784, 1047].forEach((freq, i) => this.tone({ freq, duration: 0.08, gain: 0.04, delay: i * 0.07 }));
+  }
+
+  gameOver() {
+    [392, 330, 262, 196].forEach((freq, i) => this.tone({ freq, duration: 0.16, type: 'triangle', gain: 0.05, delay: i * 0.14 }));
+  }
+
   powerOn() {
     this.tone({ freq: 55, to: 110, duration: 0.6, type: 'sawtooth', gain: 0.03 });
     this.tone({ freq: 15734, duration: 0.8, type: 'sine', gain: 0.004, delay: 0.1 });

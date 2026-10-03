@@ -77,6 +77,20 @@
           <div class="crt-ui__content" id="crt-content" tabindex="-1"></div>
         </div>
       </div>
+
+      <div class="game-hud" id="game-hud" tabindex="-1" role="dialog" aria-modal="false" aria-labelledby="game-title" hidden>
+        <header class="game-hud__bar">
+          <button class="crt-ui__back" type="button" id="game-back"><span aria-hidden="true">◀</span> Back <kbd>Esc</kbd></button>
+          <h2 class="game-hud__title" id="game-title">Hoop Fever</h2>
+          <dl class="game-hud__stats" aria-live="polite">
+            <div><dt>Score</dt><dd id="hoops-score">0</dd></div>
+            <div><dt>Time</dt><dd id="hoops-time">45</dd></div>
+            <div><dt>Best</dt><dd id="hoops-best">0</dd></div>
+          </dl>
+        </header>
+        <div class="game-hud__meter" aria-hidden="true"><span class="game-hud__sweet"></span><span class="game-hud__fill" id="hoops-power"></span></div>
+        <p class="game-hud__hint" id="hoops-hint">Hold to charge, let go in the green · aim with the mouse</p>
+      </div>
     </div>
 
     <!-- Light 2D site. Default without JavaScript, on phones and low-end devices, and the content source for the arcade screens. -->
@@ -95,6 +109,7 @@
           <a href="#/fpl-ai">FPL-AI</a>
           <a href="#/bajazzo">Bajazzo</a>
           <a href="#/contact">Contact</a>
+          <a href="#/snake">Snake</a>
         </nav>
       </header>
 
@@ -188,6 +203,13 @@
             <li><a class="pixel-btn" href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub ↗</a></li>
             <li><a class="pixel-btn" href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn ↗</a></li>
           </ul>
+        </section>
+
+        <section class="sec sec--game" id="snake" style="--c: #3dff7a" data-label="Snake" data-marquee="SNAKE" data-screen="snake" data-game="snake" aria-labelledby="snake-title">
+          <p class="sec__eyebrow">Bonus stage</p>
+          <h2 class="sec__title" id="snake-title">Snake</h2>
+          <p class="sec__lead">Eat, grow, don't bite yourself. Arrow keys, WASD or swipe.</p>
+          <div class="snake-mount" data-snake-mount></div>
         </section>
       </main>
 

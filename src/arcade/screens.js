@@ -424,6 +424,72 @@ export class ArcadeScreen {
     this.text(String(Math.floor(t / 9) % 10), W / 2 + 50, 20, { size: 32, align: 'center', color: '#ffffff' });
   }
 
+  /** Attract mode for the Snake machine: a greedy little AI plays forever. */
+  draw_snake(t) {
+    const ctx = this.ctx;
+    const cols = 24;
+    const rows = 15;
+    const cell = 20;
+    const ox = (W - cols * cell) / 2;
+    const oy = 46;
+    let ai = this.snakeAI;
+    const reset = () => {
+      const body = Array.from({ length: 10 }, (_, i) => ({ x: 11 - i, y: 7 }));
+      ai = this.snakeAI = { body, dir: { x: 1, y: 0 }, food: { x: 18, y: 4 }, clock: t, score: 0, dead: 0 };
+    };
+    if (!ai) reset();
+    const occupied = (x, y) => ai.body.some((s) => s.x === x && s.y === y);
+    while (t - ai.clock > 0.09) {
+      ai.clock += 0.09;
+      if (ai.dead) {
+        if (t - ai.dead > 1.2) reset();
+        break;
+      }
+      const head = ai.body[0];
+      const options = [ai.dir, { x: ai.dir.y, y: -ai.dir.x }, { x: -ai.dir.y, y: ai.dir.x }]
+        .map((d) => ({ d, x: head.x + d.x, y: head.y + d.y }))
+        .filter((o) => o.x >= 0 && o.y >= 0 && o.x < cols && o.y < rows && !occupied(o.x, o.y));
+      if (!options.length) {
+        ai.dead = t;
+        break;
+      }
+      options.sort((a, b) => Math.abs(a.x - ai.food.x) + Math.abs(a.y - ai.food.y) - (Math.abs(b.x - ai.food.x) + Math.abs(b.y - ai.food.y)));
+      const pick = this.rand() < 0.08 ? options[options.length - 1] : options[0];
+      ai.dir = pick.d;
+      ai.body.unshift({ x: pick.x, y: pick.y });
+      if (pick.x === ai.food.x && pick.y === ai.food.y) {
+        ai.score++;
+        ai.body.push({ ...ai.body[ai.body.length - 1] }, { ...ai.body[ai.body.length - 1] });
+        if (ai.body.length > 60) ai.body.length = 20;
+        do ai.food = { x: Math.floor(this.rand() * cols), y: Math.floor(this.rand() * rows) };
+        while (occupied(ai.food.x, ai.food.y));
+      } else {
+        ai.body.pop();
+      }
+    }
+    this.text('SNAKE', 18, 14, { size: 16 });
+    this.text(`SCORE ${String(ai.score).padStart(3, '0')}`, W - 18, 14, { size: 12, color: '#ffffff', align: 'right', glow: 4 });
+    ctx.strokeStyle = withAlpha(this.color, 0.45);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(ox - 2, oy - 2, cols * cell + 4, rows * cell + 4);
+    ctx.fillStyle = withAlpha(this.color, 0.08);
+    for (let x = 1; x < cols; x++) ctx.fillRect(ox + x * cell, oy, 1, rows * cell);
+    for (let y = 1; y < rows; y++) ctx.fillRect(ox, oy + y * cell, cols * cell, 1);
+    ctx.save();
+    ctx.shadowColor = '#ff4fa3';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ff4fa3';
+    ctx.fillRect(ox + ai.food.x * cell + 4, oy + ai.food.y * cell + 4, cell - 8, cell - 8);
+    ctx.shadowColor = this.color;
+    const flash = ai.dead && Math.floor((t - ai.dead) * 8) % 2 === 0;
+    ai.body.forEach((s, i) => {
+      ctx.fillStyle = flash ? '#ff3b2f' : i === 0 ? '#eafff2' : this.color;
+      ctx.fillRect(ox + s.x * cell + 2, oy + s.y * cell + 2, cell - 4, cell - 4);
+    });
+    ctx.restore();
+    if (this.blink(0.9)) this.text('PRESS START', W / 2, 356, { size: 12, align: 'center', color: '#ffffff', glow: 6 });
+  }
+
   draw_static() {
     const { canvas, ctx } = this.noise;
     const image = ctx.createImageData(canvas.width, canvas.height);
