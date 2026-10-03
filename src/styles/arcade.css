@@ -202,40 +202,6 @@
   transform: translateY(-2px);
 }
 
-/* Name tags over every machine on small screens, where the marquees are too small to read */
-.name-tags {
-  position: absolute;
-  inset: 0;
-  z-index: 14;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-.name-tags.is-visible { opacity: 1; }
-
-.name-tag {
-  --c: var(--accent);
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 0.32rem 0.4rem 0.28rem;
-  border: 1px solid color-mix(in srgb, var(--c) 65%, transparent);
-  background: rgba(4, 5, 8, 0.78);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--c) 35%, transparent);
-  color: var(--c);
-  font-family: var(--font-pixel);
-  font-size: 0.5rem;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-shadow: 0 0 8px color-mix(in srgb, var(--c) 60%, transparent);
-  will-change: transform;
-}
-
-.name-tag.is-hidden { visibility: hidden; }
-
 /* Floating label over the hovered cabinet */
 .hover-tag {
   --c: var(--accent);
