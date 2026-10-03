@@ -4,7 +4,7 @@ import { glowMaterial, setGlow, createBeamMaterial } from './materials.js';
 import { makeCanvas, canvasTexture, drawNeonText, noiseCanvas, softDotTexture, withAlpha, PIXEL_FONT, CRT_FONT } from './textures.js';
 
 export const ROOM = { minX: -6.5, maxX: 6.5, minZ: -5.5, maxZ: 6, height: 3.4, doorHalf: 1.1, doorHeight: 2.5 };
-const POOLS = 14;
+const POOLS = 20;
 
 const floorShader = {
   name: 'ArcadeFloor',
@@ -465,10 +465,10 @@ export function buildRoom(scene, renderer, quality) {
   }
 
   // Static pools under the signs and token machine.
-  setPoolWorld(10, 0, minZ + 0.6, '#8ce7bd', 0, 1.2);
-  setPoolWorld(11, minX + 0.4, -1.6, '#ffad42', 0, 1.6);
-  setPoolWorld(12, maxX - 0.4, -1.6, '#4cc9ff', 0, 1.6);
-  setPoolWorld(13, 0, maxZ + 0.6, '#ff4fa3', 0, 1.8);
+  setPoolWorld(16, 0, minZ + 0.6, '#8ce7bd', 0, 1.2);
+  setPoolWorld(17, minX + 0.4, -1.6, '#ffad42', 0, 1.6);
+  setPoolWorld(18, maxX - 0.4, -1.6, '#4cc9ff', 0, 1.6);
+  setPoolWorld(19, 0, maxZ + 0.6, '#ff4fa3', 0, 1.8);
 
   return {
     floor,
@@ -507,10 +507,10 @@ export function buildRoom(scene, renderer, quality) {
       signLights[0].intensity = signLights[0].userData.base * mainSign.lit;
       signLights[1].intensity = signLights[1].userData.base * insertSign.lit;
       signLights[2].intensity = signLights[2].userData.base * highSign.lit;
-      uniforms.pools.value[10].z = 0.9 * mainSign.lit;
-      uniforms.pools.value[11].z = 0.5 * insertSign.lit;
-      uniforms.pools.value[12].z = 0.5 * highSign.lit;
-      uniforms.pools.value[13].z = 0.5 * signs[5].lit;
+      uniforms.pools.value[16].z = 0.9 * mainSign.lit;
+      uniforms.pools.value[17].z = 0.5 * insertSign.lit;
+      uniforms.pools.value[18].z = 0.5 * highSign.lit;
+      uniforms.pools.value[19].z = 0.5 * signs[5].lit;
     },
   };
 }

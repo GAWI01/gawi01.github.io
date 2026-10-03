@@ -3,6 +3,7 @@ import '@fontsource/vt323/latin-400.css';
 import './styles/base.css';
 import './styles/site.css';
 import './styles/arcade.css';
+import './styles/games.css';
 
 const root = document.documentElement;
 
@@ -28,8 +29,14 @@ function sectionIdFromHash() {
   return match ? match[1] : '';
 }
 
+function mountSiteGames() {
+  const mount = document.querySelector('#site [data-snake-mount]');
+  if (mount) import('./games/snake.js').then(({ mountSnake }) => mountSnake(mount, { color: '#3dff7a' }));
+}
+
 function boot2D() {
   root.dataset.mode = '2d';
+  mountSiteGames();
   const scrollToHash = () => {
     const id = sectionIdFromHash();
     const target = id && document.getElementById(id);

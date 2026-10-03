@@ -17,6 +17,9 @@ import { Cabinet } from './cabinet.js';
 import { CameraDirector } from './director.js';
 import { ArcadeAudio } from './audio.js';
 import { screenBackground, mixWithWhite, radialShadowTexture } from './textures.js';
+import { HoopsMachine } from './hoops.js';
+import { createClawMachine, createAirHockey, createPrizeCounter } from './props.js';
+import { mountSnake } from '../games/snake.js';
 
 const TIERS = {
   high: { name: 'high', dpr: 1.75, msaa: 4, reflection: 0.5, particles: 700, screenFps: 30 },
@@ -24,6 +27,15 @@ const TIERS = {
   low: { name: 'low', dpr: 1, msaa: 0, reflection: 0.25, particles: 220, screenFps: 15 },
 };
 const TIER_ORDER = ['high', 'medium', 'low'];
+
+// Placement of everything that is not on the main arc (x, z, rotation about y).
+const LAYOUT = {
+  snake: { pos: [4.2, 0, -2.6], rot: -0.52 },
+  hoops: { pos: [-4.4, 0, -2.5], rot: 0.54 },
+  claw: { pos: [5.75, 0, -3.15], rot: -0.8 },
+  hockey: { pos: [-2.7, 0, 0.5], rot: 0 },
+  prizes: { pos: [3.05, 0, 0.75], rot: -Math.PI / 2 },
+};
 
 const DECOR = [
   { id: 'decor-invaders', label: 'Invaders', marquee: 'INVADERS', screen: 'invaders', color: '#ff6b6b', pos: [-5.75, 0, 0.1], rot: Math.PI / 2, condition: 1 },
@@ -63,6 +75,13 @@ export async function startArcade({ sectionIdFromHash }) {
     loaderHint: $('loader-hint'),
     nav: $('machine-nav'),
     hint: $('hud-hint'),
+    game: $('game-hud'),
+    gameBack: $('game-back'),
+    gameHint: $('hoops-hint'),
+    gameScore: $('hoops-score'),
+    gameTime: $('hoops-time'),
+    gameBest: $('hoops-best'),
+    gamePower: $('hoops-power'),
     tag: $('hover-tag'),
     crt: $('crt-ui'),
     crtContent: $('crt-content'),
@@ -77,7 +96,10 @@ export async function startArcade({ sectionIdFromHash }) {
   };
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const touch = matchMedia('(pointer: coarse)').matches;
-  if (touch) el.hint.textContent = 'Drag to look around · tap a machine to play';
+  if (touch) {
+    el.hint.textContent = 'Drag to look around · tap a machine to play';
+    el.gameHint.textContent = 'Hold to charge, let go in the green · drag sideways to aim';
+  }
 
   setLoader(0.1, 'Warming up the tubes…');
   await Promise.all([
@@ -107,22 +129,35 @@ export async function startArcade({ sectionIdFromHash }) {
     marquee: sec.dataset.marquee,
     screen: sec.dataset.screen,
     color: sec.style.getPropertyValue('--c').trim(),
+    game: sec.dataset.game || null,
     el: sec,
   }));
+  const arcSections = sections.filter((section) => !section.game);
 
   // Main cabinets on an arc facing the player.
   const arcCenter = new THREE.Vector3(0, 0, 0.4);
   const arcRadius = 4.2;
   const spread = THREE.MathUtils.degToRad(92);
-  const cabinets = sections.map((section, i) => {
+  const arcCabinets = arcSections.map((section, i) => {
     const cab = new Cabinet(section);
-    const angle = sections.length > 1 ? -spread / 2 + (spread * i) / (sections.length - 1) : 0;
+    const angle = arcSections.length > 1 ? -spread / 2 + (spread * i) / (arcSections.length - 1) : 0;
     cab.group.position.set(arcCenter.x + Math.sin(angle) * arcRadius, 0, arcCenter.z - Math.cos(angle) * arcRadius);
     cab.group.rotation.y = -angle;
     cab.section = section;
     scene.add(cab.group);
     return cab;
   });
+  // Game cabinets (Snake) stand on their own in the room.
+  const gameCabinets = sections.filter((section) => section.game).map((section) => {
+    const cab = new Cabinet(section);
+    const spot = LAYOUT[section.game] || LAYOUT.snake;
+    cab.group.position.set(...spot.pos);
+    cab.group.rotation.y = spot.rot;
+    cab.section = section;
+    scene.add(cab.group);
+    return cab;
+  });
+  const cabinets = [...arcCabinets, ...gameCabinets];
   const decor = DECOR.map((spec) => {
     const cab = new Cabinet({ ...spec, interactive: false });
     cab.group.position.set(...spec.pos);
@@ -131,7 +166,26 @@ export async function startArcade({ sectionIdFromHash }) {
     return cab;
   });
   const allCabinets = [...cabinets, ...decor];
-  const byId = Object.fromEntries(cabinets.map((c) => [c.id, c]));
+
+  const hoops = new HoopsMachine();
+  hoops.group.position.set(...LAYOUT.hoops.pos);
+  hoops.group.rotation.y = LAYOUT.hoops.rot;
+  scene.add(hoops.group);
+
+  const props = [
+    [createClawMachine(), LAYOUT.claw],
+    [createAirHockey(), LAYOUT.hockey],
+    [createPrizeCounter(), LAYOUT.prizes],
+  ].map(([prop, spot]) => {
+    prop.group.position.set(...spot.pos);
+    prop.group.rotation.y = spot.rot;
+    scene.add(prop.group);
+    return prop;
+  });
+
+  // Everything the player can walk up to: screen cabinets and the hoops game.
+  const machines = [...cabinets, hoops];
+  const byId = Object.fromEntries(machines.map((c) => [c.id, c]));
   scene.updateMatrixWorld(true);
 
   // Contact shadows, beams and floor glow per cabinet.
@@ -151,7 +205,26 @@ export async function startArcade({ sectionIdFromHash }) {
     room.setPoolWorld(i, cab.poolX, cab.poolZ, cab.color, 0, 2.2);
     if (cab.interactive) room.addBeam(p.x + forward.x * 0.55, p.z + forward.z * 0.55, mixWithWhite(cab.color, 0.55), 0.1);
   });
+  // Floor glow and contact shadows for the hoops machine and props.
+  const glowers = [hoops, ...props];
+  glowers.forEach((item, i) => {
+    item.poolIndex = allCabinets.length + i;
+    const local = item === hoops ? new THREE.Vector3(0, 0, 0.6) : item.poolAt;
+    const world = local.clone().applyMatrix4(item.group.matrixWorld);
+    room.setPoolWorld(item.poolIndex, world.x, world.z, item.color, 0, item === hoops ? 1.4 : 1.8);
+  });
+  const hoopsShadow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 3.4), shadowMat);
+  hoopsShadow.rotation.x = -Math.PI / 2;
+  hoopsShadow.position.set(0, 0.004, -1.3);
+  hoops.group.add(hoopsShadow);
+  for (const prop of props) {
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.004;
+    prop.group.add(shadow);
+  }
   room.addBeam(0, 0.9, '#ffe3c4', 0.07);
+  room.addBeam(LAYOUT.hoops.pos[0] - 0.5, LAYOUT.hoops.pos[2] - 0.9, '#ffc58a', 0.06);
   room.addBeam(-2.6, 2.6, '#c9b8ff', 0.05);
   room.addBeam(2.6, 2.6, '#c9b8ff', 0.05);
 
@@ -178,12 +251,13 @@ export async function startArcade({ sectionIdFromHash }) {
   function updateHomeFraming() {
     const aspect = window.innerWidth / window.innerHeight;
     // Keep the whole arc in frame: widen the lens and step back on narrow screens.
-    const needHalf = THREE.MathUtils.degToRad(37);
+    // Stand back far enough to take in the corners: hoops on the left, Snake and the claw on the right.
+    const needHalf = THREE.MathUtils.degToRad(39.5);
     const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(needHalf) / aspect));
-    director.home.fov = THREE.MathUtils.clamp(fov, 46, 80);
-    const back = aspect < 1 ? Math.min(2.5, (1 - aspect) * 4.6) : 0;
-    director.home.position.set(0, 1.6 + back * 0.08, 3 + back);
-    director.home.target.set(0, 1.12, -2.6);
+    director.home.fov = THREE.MathUtils.clamp(fov, 48, 80);
+    const back = aspect < 1 ? Math.min(1.4, (1 - aspect) * 3) : 0;
+    director.home.position.set(0, 1.68 + back * 0.08, 4.2 + back);
+    director.home.target.set(0, 1.18, -2.6);
   }
   updateHomeFraming();
 
@@ -201,7 +275,7 @@ export async function startArcade({ sectionIdFromHash }) {
 
   // HUD: one button per machine.
   const navButtons = {};
-  for (const cab of cabinets) {
+  for (const cab of machines) {
     const li = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';
@@ -238,7 +312,7 @@ export async function startArcade({ sectionIdFromHash }) {
   // Pointer: hover, drag-to-look, click-to-play.
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const hitboxes = cabinets.map((c) => c.hitbox);
+  const hitboxes = machines.map((c) => c.hitbox);
   let pointerInside = false;
   let pointerHover = null;
   let navHover = null;
@@ -247,9 +321,23 @@ export async function startArcade({ sectionIdFromHash }) {
   let drag = null;
   const canvas = renderer.domElement;
 
+  // Aim follows the pointer across the screen; touch aims relative to where the finger went down.
+  let touchAim = null;
+  function aimFromPointer(e) {
+    if (e.pointerType === 'touch') {
+      if (touchAim) hoops.setAim(touchAim.aim + ((e.clientX - touchAim.x) / window.innerWidth) * 1.4);
+    } else {
+      hoops.setAim(((e.clientX / window.innerWidth) * 2 - 1) * 0.6);
+    }
+  }
+
   canvas.addEventListener('pointermove', (e) => {
     pointerInside = true;
     ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+    if (state === 'game') {
+      aimFromPointer(e);
+      return;
+    }
     if (!touch) director.setPointer(ndc.x, ndc.y);
     if (drag) {
       const dx = e.clientX - drag.x;
@@ -268,12 +356,24 @@ export async function startArcade({ sectionIdFromHash }) {
     director.setPointer(0, 0);
   });
   canvas.addEventListener('pointerdown', (e) => {
+    if (state === 'game') {
+      canvas.setPointerCapture(e.pointerId);
+      if (e.pointerType === 'touch') touchAim = { x: e.clientX, aim: hoops.aimX };
+      else aimFromPointer(e);
+      hoops.beginCharge();
+      return;
+    }
     drag = { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, moved: false };
     canvas.setPointerCapture(e.pointerId);
     ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
     pointerInside = true;
   });
   canvas.addEventListener('pointerup', (e) => {
+    if (state === 'game') {
+      touchAim = null;
+      hoops.release();
+      return;
+    }
     const wasDrag = drag?.moved;
     drag = null;
     canvas.classList.remove('is-dragging');
@@ -290,20 +390,38 @@ export async function startArcade({ sectionIdFromHash }) {
   });
 
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && (state === 'screen' || state === 'opening')) {
+    if (e.key === 'Escape' && (state === 'screen' || state === 'opening' || state === 'game')) {
       e.preventDefault();
       goBack();
       return;
     }
+    if (state === 'game') {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        if (e.target.closest?.('button')) return;
+        e.preventDefault();
+        if (!e.repeat) hoops.beginCharge();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        hoops.nudgeAim(e.key === 'ArrowLeft' ? -0.04 : 0.04);
+      }
+      return;
+    }
     if (state !== 'room') return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      const i = keyHover ? cabinets.indexOf(keyHover) : e.key === 'ArrowRight' ? -1 : cabinets.length;
-      keyHover = cabinets[(i + (e.key === 'ArrowRight' ? 1 : -1) + cabinets.length) % cabinets.length];
+      const i = keyHover ? machines.indexOf(keyHover) : e.key === 'ArrowRight' ? -1 : machines.length;
+      keyHover = machines[(i + (e.key === 'ArrowRight' ? 1 : -1) + machines.length) % machines.length];
       navButtons[keyHover.id].focus();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (state === 'game' && (e.code === 'Space' || e.code === 'Enter')) {
+      e.preventDefault();
+      hoops.release();
     }
   });
 
   el.back.addEventListener('click', goBack);
+  el.gameBack.addEventListener('click', goBack);
   // Links inside a screen to other machines just change the hash; the router does the rest.
 
   function updateHover() {
@@ -329,7 +447,7 @@ export async function startArcade({ sectionIdFromHash }) {
       }
       el.tag.classList.toggle('is-visible', !!hovered);
     }
-    for (const cab of cabinets) cab.hoverTarget = cab === hovered ? 1 : 0;
+    for (const cab of machines) cab.hoverTarget = cab === hovered ? 1 : 0;
     if (hovered) {
       const p = hovered.getLabelAnchor(new THREE.Vector3()).project(camera);
       el.tag.style.left = `${((p.x + 1) / 2) * window.innerWidth}px`;
@@ -348,12 +466,19 @@ export async function startArcade({ sectionIdFromHash }) {
     for (const hud of el.huds) hud.inert = busy;
   }
 
+  let screenGame = null;
+  const snakeSounds = { eat: () => audio.chomp(), start: () => audio.start(), over: () => audio.gameOver() };
+
   function fillScreen(cab) {
+    screenGame?.destroy();
+    screenGame = null;
     const clone = cab.section.el.cloneNode(true);
     clone.removeAttribute('id');
     clone.removeAttribute('aria-labelledby');
     clone.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
     el.crtContent.replaceChildren(clone);
+    const mount = clone.querySelector('[data-snake-mount]');
+    if (mount) screenGame = mountSnake(mount, { color: cab.color, onSound: (name) => snakeSounds[name]?.() });
     el.crtContent.scrollTop = 0;
     el.crt.style.setProperty('--c', cab.color);
     el.crt.style.setProperty('--screen-bg', screenBackground(cab.color));
@@ -362,18 +487,14 @@ export async function startArcade({ sectionIdFromHash }) {
 
   async function openMachine(cab) {
     if (state === 'screen' && current === cab) return;
-    if (state === 'screen') await closeMachine();
+    if (current) await closeCurrent();
     state = 'opening';
     current = cab;
     paused = false;
     setBusy(true);
     el.tag.classList.remove('is-visible');
     hovered = null;
-    for (const c of allCabinets) {
-      c.focusTarget = c === cab ? 1 : 0;
-      c.dimTarget = c === cab ? 0 : 1;
-      c.hoverTarget = 0;
-    }
+    highlight(cab);
     const pose = screenPose(cab);
     const duration = reducedMotion ? 0.9 : 2.5;
     audio.coin();
@@ -408,8 +529,87 @@ export async function startArcade({ sectionIdFromHash }) {
     fx.aberration = 1;
     fx.bloom = 1;
     applyFx();
-    el.back.focus({ preventScroll: true });
+    if (screenGame) screenGame.focus();
+    else el.back.focus({ preventScroll: true });
   }
+
+  /** Spotlight one machine and dim the rest; null restores the room. */
+  function highlight(target) {
+    for (const c of [...allCabinets, hoops]) {
+      c.focusTarget = target && c === target ? 1 : 0;
+      c.dimTarget = target && c !== target ? 1 : 0;
+      c.hoverTarget = 0;
+    }
+  }
+
+  async function openHoops() {
+    if (state === 'game' && current === hoops) return;
+    if (current) await closeCurrent();
+    state = 'opening';
+    current = hoops;
+    paused = false;
+    setBusy(true);
+    el.tag.classList.remove('is-visible');
+    hovered = null;
+    highlight(hoops);
+    const pose = hoops.shootPose();
+    const duration = reducedMotion ? 0.9 : 2.3;
+    audio.coin();
+    audio.whoosh(duration);
+    await director.flyTo(pose, {
+      duration,
+      via: [director.camera.position.clone().lerp(pose.approach, 0.5).add(new THREE.Vector3(0, 0.15, 0)), pose.approach],
+      ease: 'power3.inOut',
+    });
+    if (current !== hoops || state !== 'opening') return;
+    state = 'game';
+    hoops.enter();
+    el.game.hidden = false;
+    el.game.focus({ preventScroll: true });
+  }
+
+  async function closeHoops() {
+    if (current !== hoops || (state !== 'game' && state !== 'opening')) return;
+    state = 'closing';
+    director.finishFlight();
+    audio.back();
+    hoops.exit();
+    el.game.hidden = true;
+    highlight(null);
+    updateHomeFraming();
+    const pose = hoops.shootPose();
+    director.resetLook();
+    await director.flyTo(director.home, {
+      duration: reducedMotion ? 0.8 : 2,
+      via: [pose.approach, pose.approach.clone().lerp(director.home.position, 0.5).add(new THREE.Vector3(0, 0.12, 0))],
+      ease: 'power2.inOut',
+      lookLead: 1.1,
+      then: 'free',
+    });
+    current = null;
+    state = 'room';
+    setBusy(false);
+    navButtons[hoops.id]?.focus({ preventScroll: true });
+  }
+
+  function closeCurrent() {
+    return current === hoops ? closeHoops() : closeMachine();
+  }
+
+  // The machine reports its game state; the HUD mirrors it.
+  hoops.on('state', ({ score, time, hi, over }) => {
+    el.gameScore.textContent = score;
+    el.gameTime.textContent = time;
+    el.gameBest.textContent = hi;
+    el.game.classList.toggle('is-over', over);
+  });
+  hoops.on('throw', () => state === 'game' && audio.tone({ freq: 300, to: 520, duration: 0.12, type: 'triangle', gain: 0.03 }));
+  hoops.on('bounce', (k) => state === 'game' && audio.thud(k));
+  hoops.on('rim', (k) => state === 'game' && audio.rim(k));
+  hoops.on('score', (live) => live && audio.swish());
+  hoops.on('tick', () => audio.tick());
+  hoops.on('start', () => audio.start());
+  hoops.on('over', () => audio.buzzer());
 
   async function closeMachine() {
     if (!current || (state !== 'screen' && state !== 'opening')) return;
@@ -424,11 +624,10 @@ export async function startArcade({ sectionIdFromHash }) {
     await wait(reducedMotion ? 50 : 360);
     el.crt.hidden = true;
     el.crt.classList.remove('is-off');
+    screenGame?.destroy();
+    screenGame = null;
     cab.screen.setMode('attract');
-    for (const c of allCabinets) {
-      c.focusTarget = 0;
-      c.dimTarget = 0;
-    }
+    highlight(null);
     fx.aberration = 1;
     fx.bloom = 1;
     applyFx();
@@ -453,8 +652,9 @@ export async function startArcade({ sectionIdFromHash }) {
     const cab = byId[id];
     pending = pending.then(() => {
       if (state === 'intro') return undefined;
+      if (cab === hoops) return openHoops();
       if (cab) return openMachine(cab);
-      if (current) return closeMachine();
+      if (current) return closeCurrent();
       return undefined;
     });
     return pending;
@@ -522,9 +722,20 @@ export async function startArcade({ sectionIdFromHash }) {
     screenClock += dt;
     const drawScreens = screenClock >= 1 / quality.screenFps;
     if (drawScreens) screenClock = 0;
+    const pools = room.floor.material.uniforms.pools.value;
     for (const cab of allCabinets) {
       cab.update(time, dt, drawScreens);
-      room.floor.material.uniforms.pools.value[cab.poolIndex].z = 0.85 * cab.glowLevel;
+      pools[cab.poolIndex].z = 0.85 * cab.glowLevel;
+    }
+    hoops.update(time, dt, { active: state === 'game' });
+    pools[hoops.poolIndex].z = 0.7 * hoops.glowLevel;
+    for (const prop of props) {
+      prop.update(time, dt);
+      pools[prop.poolIndex].z = 0.6 * prop.lit;
+    }
+    if (state === 'game') {
+      el.gamePower.style.transform = `scaleY(${hoops.power.toFixed(3)})`;
+      el.game.classList.toggle('is-charging', hoops.charging);
     }
     room.update(time, dt);
     composer.render(dt);
@@ -533,6 +744,8 @@ export async function startArcade({ sectionIdFromHash }) {
 
   // Draw every screen once and compile shaders before the curtain lifts, so the intro does not stutter.
   for (const cab of allCabinets) cab.update(0, 0.016, true);
+  hoops.update(0, 0.016);
+  for (const prop of props) prop.update(0, 0.016);
   camera.position.set(0, 1.6, ROOM.maxZ + 4.5);
   camera.lookAt(0, 1.35, 0);
   setLoader(0.8, 'Calibrating CRTs…');
@@ -558,6 +771,8 @@ export async function startArcade({ sectionIdFromHash }) {
       cab.lit = 1;
       cab.crtMat.uniforms.power.value = 1;
     }
+    hoops.lit = 1;
+    for (const prop of props) prop.lit = 1;
   }
 
   function finishIntro() {
@@ -607,9 +822,10 @@ export async function startArcade({ sectionIdFromHash }) {
       flicker(tl, cab, 'lit', at);
       tl.to(cab.crtMat.uniforms.power, { value: 1, duration: 0.7, ease: 'power2.out' }, at + 0.1);
     });
+    [hoops, ...props].forEach((item, i) => flicker(tl, item, 'lit', 2.1 + i * 0.22));
     director.flyTo(director.home, {
       duration: 4.6,
-      via: [new THREE.Vector3(0, 1.62, ROOM.maxZ + 0.6), new THREE.Vector3(0, 1.62, ROOM.maxZ - 1.1)],
+      via: [new THREE.Vector3(0, 1.66, ROOM.maxZ + 0.6), new THREE.Vector3(0, 1.66, ROOM.maxZ - 0.7)],
       ease: 'power2.inOut',
       lookLead: 1,
       then: 'free',
