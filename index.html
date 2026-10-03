@@ -2,56 +2,204 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Gabriel Witzøe — cybersecurity, software and AI projects.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Gabriel Witzøe — cybersecurity, software and AI projects. Step into the arcade.">
+    <meta name="theme-color" content="#06070b">
     <title>Gabriel Witzøe — gawi.no</title>
-    <link rel="stylesheet" href="style.css">
+    <script>
+      // Pick 3D or 2D before first paint so neither layout flashes.
+      (function () {
+        var root = document.documentElement;
+        var gl = false;
+        try {
+          var c = document.createElement('canvas');
+          var ctx = c.getContext('webgl2');
+          gl = !!ctx;
+          var lose = ctx && ctx.getExtension('WEBGL_lose_context');
+          if (lose) lose.loseContext();
+        } catch (e) {}
+        var mode = new URLSearchParams(location.search).get('mode');
+        if (mode !== '2d' && mode !== '3d') {
+          try { mode = localStorage.getItem('gawi-mode'); } catch (e) { mode = null; }
+        }
+        if (mode !== '2d' && mode !== '3d') {
+          var smallTouch = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
+          var weak = (navigator.deviceMemory && navigator.deviceMemory <= 2) ||
+            (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+          var saveData = navigator.connection && navigator.connection.saveData;
+          mode = smallTouch || weak || saveData ? '2d' : '3d';
+        }
+        if (!gl) mode = '2d';
+        root.dataset.mode = mode;
+        root.dataset.webgl = gl ? 'yes' : 'no';
+      })();
+    </script>
   </head>
   <body>
-    <main class="page-shell">
-      <header class="hero">
-        <p class="eyebrow">gawi.no</p>
-        <h1>Gabriel Witzøe</h1>
-        <p class="specialties">Cybersecurity <span>·</span> Software <span>·</span> AI</p>
-        <p class="intro">Building practical tools, software and security projects.</p>
+    <!-- Arcade (3D). Built by src/arcade when data-mode="3d". -->
+    <div class="arcade" id="arcade" aria-label="Gabriel Witzøe's arcade">
+      <div class="arcade__stage" id="stage"></div>
+
+      <div class="loader" id="loader" role="status" aria-live="polite">
+        <p class="loader__brand">gawi.no</p>
+        <p class="loader__title">Insert coin</p>
+        <div class="loader__bar"><span id="loader-bar"></span></div>
+        <p class="loader__hint" id="loader-hint">Powering up the cabinets…</p>
+      </div>
+
+      <header class="hud hud--top">
+        <a class="hud__brand" href="#/" data-home>
+          <span class="hud__name">Gabriel Witz<span class="oe">ø</span>e</span>
+          <span class="hud__tag">Cybersecurity · Software · AI</span>
+        </a>
+        <div class="hud__actions">
+          <button class="hud__btn" type="button" id="sound-toggle" aria-pressed="false">Sound off</button>
+          <button class="hud__btn" type="button" data-set-mode="2d">2D view</button>
+        </div>
       </header>
 
-      <section class="projects" aria-labelledby="projects-title">
-        <div class="section-heading">
-          <p class="eyebrow">Selected work</p>
-          <h2 id="projects-title">Projects</h2>
-        </div>
-
-        <div class="project-grid">
-          <a class="project-card" href="https://github.com/GAWI01/FPL-AI" aria-label="Visit FPL-AI">
-            <div class="project-card__topline">
-              <h3>FPL-AI</h3>
-              <span class="status status--active">Active project</span>
-            </div>
-            <p>Fantasy Premier League analysis tool using data and statistics to support transfer, captaincy and squad decisions.</p>
-            <span class="stack">Python <b>·</b> FastAPI <b>·</b> Next.js <b>·</b> TypeScript</span>
-            <span class="card-link">Visit FPL-AI <span aria-hidden="true">↗</span></span>
-          </a>
-
-          <a class="project-card" href="https://bajazzo-platform.vercel.app/" target="_blank" rel="noreferrer">
-            <div class="project-card__topline">
-              <h3>Bajazzo</h3>
-              <span class="status">Prototype / In development</span>
-            </div>
-            <p>Prototype restaurant and catering platform in development, exploring online ordering, product management and administrative functionality.</p>
-            <span class="stack">Next.js <b>·</b> Supabase <b>·</b> Vercel</span>
-            <span class="card-link">Visit Bajazzo <span aria-hidden="true">↗</span></span>
-          </a>
-        </div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <p>© <span>2026</span> Gabriel Witzøe</p>
-      <nav aria-label="Social links">
-        <a href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub</a>
-        <a href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn</a>
+      <nav class="hud hud--bottom" aria-label="Arcade machines">
+        <p class="hud__hint" id="hud-hint">Drag to look around · click a machine to play</p>
+        <ul class="machine-nav" id="machine-nav"></ul>
       </nav>
-    </footer>
+
+      <div class="hover-tag" id="hover-tag" aria-hidden="true">
+        <span class="hover-tag__label"></span>
+        <span class="hover-tag__cta">Press start</span>
+      </div>
+
+      <div class="crt-ui" id="crt-ui" role="dialog" aria-modal="true" aria-labelledby="crt-title" hidden>
+        <div class="crt-ui__frame">
+          <header class="crt-ui__bar">
+            <button class="crt-ui__back" type="button" id="crt-back"><span aria-hidden="true">◀</span> Back <kbd>Esc</kbd></button>
+            <span class="crt-ui__label" id="crt-title"></span>
+          </header>
+          <div class="crt-ui__content" id="crt-content" tabindex="-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Light 2D site. Default without JavaScript, on phones and low-end devices, and the content source for the arcade screens. -->
+    <div class="site" id="site">
+      <header class="site__hero">
+        <p class="eyebrow">gawi.no</p>
+        <h1>Gabriel Witz<span class="oe">ø</span>e</h1>
+        <p class="specialties">Cybersecurity <span>·</span> Software <span>·</span> AI</p>
+        <p class="intro">Building practical tools, software and security projects.</p>
+        <div class="site__actions">
+          <button class="pixel-btn" type="button" data-set-mode="3d" data-needs-webgl>Enter the 3D arcade</button>
+        </div>
+        <nav class="site__nav" aria-label="Sections">
+          <a href="#/about">About</a>
+          <a href="#/projects">Projects</a>
+          <a href="#/fpl-ai">FPL-AI</a>
+          <a href="#/bajazzo">Bajazzo</a>
+          <a href="#/contact">Contact</a>
+        </nav>
+      </header>
+
+      <main class="site__sections">
+        <section class="sec" id="about" style="--c: #8ce7bd" data-label="About" data-marquee="PLAYER 1" data-screen="about" aria-labelledby="about-title">
+          <p class="sec__eyebrow">Profile</p>
+          <h2 class="sec__title" id="about-title">Gabriel Witz<span class="oe">ø</span>e</h2>
+          <p class="sec__lead">Cybersecurity <span>·</span> Software <span>·</span> AI</p>
+          <p>Building practical tools, software and security projects.</p>
+          <dl class="sec__stats">
+            <div><dt>Class</dt><dd>Cybersecurity</dd></div>
+            <div><dt>Skills</dt><dd>Software · AI</dd></div>
+            <div><dt>Base</dt><dd>gawi.no</dd></div>
+          </dl>
+          <p class="sec__links">
+            <a class="pixel-btn" href="#/projects">See projects</a>
+            <a class="pixel-btn pixel-btn--ghost" href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub ↗</a>
+          </p>
+        </section>
+
+        <section class="sec" id="projects" style="--c: #4cc9ff" data-label="Projects" data-marquee="STAGE SELECT" data-screen="projects" aria-labelledby="projects-title">
+          <p class="sec__eyebrow">Selected work</p>
+          <h2 class="sec__title" id="projects-title">Projects</h2>
+          <ul class="stage-list">
+            <li class="stage" style="--c: #b388ff">
+              <div class="stage__top">
+                <h3>FPL-AI</h3>
+                <span class="status status--active">Active project</span>
+              </div>
+              <p>Fantasy Premier League analysis tool using data and statistics to support transfer, captaincy and squad decisions.</p>
+              <p class="stage__stack">Python · FastAPI · Next.js · TypeScript</p>
+              <p class="stage__links">
+                <a class="pixel-btn" href="#/fpl-ai">Play stage</a>
+                <a class="pixel-btn pixel-btn--ghost" href="https://github.com/GAWI01/FPL-AI" target="_blank" rel="noreferrer">Visit FPL-AI ↗</a>
+              </p>
+            </li>
+            <li class="stage" style="--c: #ffad42">
+              <div class="stage__top">
+                <h3>Bajazzo</h3>
+                <span class="status">Prototype / In development</span>
+              </div>
+              <p>Prototype restaurant and catering platform in development, exploring online ordering, product management and administrative functionality.</p>
+              <p class="stage__stack">Next.js · Supabase · Vercel</p>
+              <p class="stage__links">
+                <a class="pixel-btn" href="#/bajazzo">Play stage</a>
+                <a class="pixel-btn pixel-btn--ghost" href="https://bajazzo-platform.vercel.app/" target="_blank" rel="noreferrer">Visit Bajazzo ↗</a>
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section class="sec" id="fpl-ai" style="--c: #b388ff" data-label="FPL-AI" data-marquee="FPL-AI" data-screen="fpl" aria-labelledby="fpl-title">
+          <p class="sec__eyebrow">Stage 1 · <span class="status status--active">Active project</span></p>
+          <h2 class="sec__title" id="fpl-title">FPL-AI</h2>
+          <p class="sec__lead">Fantasy Premier League analysis tool using data and statistics to support transfer, captaincy and squad decisions.</p>
+          <dl class="sec__stats">
+            <div><dt>Transfers</dt><dd>Data-backed suggestions</dd></div>
+            <div><dt>Captaincy</dt><dd>Statistical picks</dd></div>
+            <div><dt>Squad</dt><dd>Decision support</dd></div>
+          </dl>
+          <ul class="chips" aria-label="Stack">
+            <li>Python</li><li>FastAPI</li><li>Next.js</li><li>TypeScript</li>
+          </ul>
+          <p class="sec__links">
+            <a class="pixel-btn" href="https://github.com/GAWI01/FPL-AI" target="_blank" rel="noreferrer">Visit FPL-AI ↗</a>
+          </p>
+        </section>
+
+        <section class="sec" id="bajazzo" style="--c: #ffad42" data-label="Bajazzo" data-marquee="BAJAZZO" data-screen="bajazzo" aria-labelledby="bajazzo-title">
+          <p class="sec__eyebrow">Stage 2 · <span class="status">Prototype / In development</span></p>
+          <h2 class="sec__title" id="bajazzo-title">Bajazzo</h2>
+          <p class="sec__lead">Prototype restaurant and catering platform in development, exploring online ordering, product management and administrative functionality.</p>
+          <dl class="sec__stats">
+            <div><dt>Ordering</dt><dd>Online orders</dd></div>
+            <div><dt>Products</dt><dd>Menu management</dd></div>
+            <div><dt>Admin</dt><dd>Back-office tools</dd></div>
+          </dl>
+          <ul class="chips" aria-label="Stack">
+            <li>Next.js</li><li>Supabase</li><li>Vercel</li>
+          </ul>
+          <p class="sec__links">
+            <a class="pixel-btn" href="https://bajazzo-platform.vercel.app/" target="_blank" rel="noreferrer">Visit Bajazzo ↗</a>
+          </p>
+        </section>
+
+        <section class="sec" id="contact" style="--c: #ff4fa3" data-label="Contact" data-marquee="CONTINUE?" data-screen="contact" aria-labelledby="contact-title">
+          <p class="sec__eyebrow">Contact</p>
+          <h2 class="sec__title" id="contact-title">Player 2, join in</h2>
+          <p class="sec__lead">Want to talk security, software or AI? Find me here.</p>
+          <ul class="contact-list">
+            <li><a class="pixel-btn" href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub ↗</a></li>
+            <li><a class="pixel-btn" href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn ↗</a></li>
+          </ul>
+        </section>
+      </main>
+
+      <footer class="site__footer">
+        <p>© <span>2026</span> Gabriel Witzøe</p>
+        <nav aria-label="Social links">
+          <a href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn</a>
+        </nav>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
