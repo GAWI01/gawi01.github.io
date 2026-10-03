@@ -18,7 +18,7 @@ import { CameraDirector } from './director.js';
 import { ArcadeAudio } from './audio.js';
 import { screenBackground, mixWithWhite, radialShadowTexture } from './textures.js';
 import { HoopsMachine } from './hoops.js';
-import { createClawMachine, createAirHockey, createPrizeCounter } from './props.js';
+import { createClawMachine, createAirHockey } from './props.js';
 import { mountSnake } from '../games/snake.js';
 
 const TIERS = {
@@ -29,19 +29,13 @@ const TIERS = {
 const TIER_ORDER = ['high', 'medium', 'low'];
 
 // Placement of everything that is not on the main arc (x, z, rotation about y).
+// The games stand along the side walls; the corners hold the claw machine and the air hockey table.
 const LAYOUT = {
-  snake: { pos: [4.2, 0, -2.6], rot: -0.52 },
-  hoops: { pos: [-4.4, 0, -2.5], rot: 0.54 },
-  claw: { pos: [5.75, 0, -3.15], rot: -0.8 },
-  hockey: { pos: [-2.7, 0, 0.5], rot: 0 },
-  prizes: { pos: [3.05, 0, 0.75], rot: -Math.PI / 2 },
+  snake: { pos: [5.75, 0, 0.5], rot: -Math.PI / 2 },
+  hoops: { pos: [-3.75, 0, 0.85], rot: Math.PI / 2 },
+  claw: { pos: [5.2, 0, -3.75], rot: -0.6 },
+  hockey: { pos: [-4.6, 0, -3.4], rot: -0.6 },
 };
-
-const DECOR = [
-  { id: 'decor-invaders', label: 'Invaders', marquee: 'INVADERS', screen: 'invaders', color: '#ff6b6b', pos: [-5.75, 0, 0.1], rot: Math.PI / 2, condition: 1 },
-  { id: 'decor-broken', label: 'Out of order', marquee: 'TURBO 99', screen: 'static', color: '#8a8f9c', pos: [-5.75, 0, 1.1], rot: Math.PI / 2, condition: 0.55 },
-  { id: 'decor-pong', label: 'Pong', marquee: 'PADDLE WARS', screen: 'pong', color: '#6cf0ff', pos: [5.75, 0, 0.5], rot: -Math.PI / 2, condition: 1 },
-];
 
 function pickQuality(renderer) {
   const forced = new URLSearchParams(location.search).get('quality');
@@ -158,14 +152,6 @@ export async function startArcade({ sectionIdFromHash }) {
     return cab;
   });
   const cabinets = [...arcCabinets, ...gameCabinets];
-  const decor = DECOR.map((spec) => {
-    const cab = new Cabinet({ ...spec, interactive: false });
-    cab.group.position.set(...spec.pos);
-    cab.group.rotation.y = spec.rot;
-    scene.add(cab.group);
-    return cab;
-  });
-  const allCabinets = [...cabinets, ...decor];
 
   const hoops = new HoopsMachine();
   hoops.group.position.set(...LAYOUT.hoops.pos);
@@ -175,7 +161,6 @@ export async function startArcade({ sectionIdFromHash }) {
   const props = [
     [createClawMachine(), LAYOUT.claw],
     [createAirHockey(), LAYOUT.hockey],
-    [createPrizeCounter(), LAYOUT.prizes],
   ].map(([prop, spot]) => {
     prop.group.position.set(...spot.pos);
     prop.group.rotation.y = spot.rot;
@@ -191,7 +176,7 @@ export async function startArcade({ sectionIdFromHash }) {
   // Contact shadows, beams and floor glow per cabinet.
   const shadowMat = new THREE.MeshBasicMaterial({ map: radialShadowTexture(), transparent: true, depthWrite: false, color: '#000000' });
   const forward = new THREE.Vector3();
-  allCabinets.forEach((cab, i) => {
+  cabinets.forEach((cab, i) => {
     const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), shadowMat);
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(0, 0.004, 0.05);
@@ -208,7 +193,7 @@ export async function startArcade({ sectionIdFromHash }) {
   // Floor glow and contact shadows for the hoops machine and props.
   const glowers = [hoops, ...props];
   glowers.forEach((item, i) => {
-    item.poolIndex = allCabinets.length + i;
+    item.poolIndex = cabinets.length + i;
     const local = item === hoops ? new THREE.Vector3(0, 0, 0.6) : item.poolAt;
     const world = local.clone().applyMatrix4(item.group.matrixWorld);
     room.setPoolWorld(item.poolIndex, world.x, world.z, item.color, 0, item === hoops ? 1.4 : 1.8);
@@ -224,7 +209,8 @@ export async function startArcade({ sectionIdFromHash }) {
     prop.group.add(shadow);
   }
   room.addBeam(0, 0.9, '#ffe3c4', 0.07);
-  room.addBeam(LAYOUT.hoops.pos[0] - 0.5, LAYOUT.hoops.pos[2] - 0.9, '#ffc58a', 0.06);
+  const hoopsSpot = new THREE.Vector3(0, 0, -1.6).applyMatrix4(hoops.group.matrixWorld);
+  room.addBeam(hoopsSpot.x, hoopsSpot.z, '#ffc58a', 0.06);
   room.addBeam(-2.6, 2.6, '#c9b8ff', 0.05);
   room.addBeam(2.6, 2.6, '#c9b8ff', 0.05);
 
@@ -535,7 +521,7 @@ export async function startArcade({ sectionIdFromHash }) {
 
   /** Spotlight one machine and dim the rest; null restores the room. */
   function highlight(target) {
-    for (const c of [...allCabinets, hoops]) {
+    for (const c of [...cabinets, hoops]) {
       c.focusTarget = target && c === target ? 1 : 0;
       c.dimTarget = target && c !== target ? 1 : 0;
       c.hoverTarget = 0;
@@ -723,7 +709,7 @@ export async function startArcade({ sectionIdFromHash }) {
     const drawScreens = screenClock >= 1 / quality.screenFps;
     if (drawScreens) screenClock = 0;
     const pools = room.floor.material.uniforms.pools.value;
-    for (const cab of allCabinets) {
+    for (const cab of cabinets) {
       cab.update(time, dt, drawScreens);
       pools[cab.poolIndex].z = 0.85 * cab.glowLevel;
     }
@@ -743,7 +729,7 @@ export async function startArcade({ sectionIdFromHash }) {
   }
 
   // Draw every screen once and compile shaders before the curtain lifts, so the intro does not stutter.
-  for (const cab of allCabinets) cab.update(0, 0.016, true);
+  for (const cab of cabinets) cab.update(0, 0.016, true);
   hoops.update(0, 0.016);
   for (const prop of props) prop.update(0, 0.016);
   camera.position.set(0, 1.6, ROOM.maxZ + 4.5);
@@ -767,7 +753,7 @@ export async function startArcade({ sectionIdFromHash }) {
   function powerEverything() {
     room.state.power = 1;
     for (const sign of room.signs) sign.lit = 1;
-    for (const cab of allCabinets) {
+    for (const cab of cabinets) {
       cab.lit = 1;
       cab.crtMat.uniforms.power.value = 1;
     }
@@ -817,7 +803,7 @@ export async function startArcade({ sectionIdFromHash }) {
     flicker(tl, highSign, 'lit', 1.95);
     flicker(tl, overSign, 'lit', 2.2);
     flicker(tl, exitSign, 'lit', 2.4);
-    allCabinets.forEach((cab, i) => {
+    cabinets.forEach((cab, i) => {
       const at = 1.6 + i * 0.16;
       flicker(tl, cab, 'lit', at);
       tl.to(cab.crtMat.uniforms.power, { value: 1, duration: 0.7, ease: 'power2.out' }, at + 0.1);

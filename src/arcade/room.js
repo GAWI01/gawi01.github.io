@@ -324,7 +324,7 @@ export function buildRoom(scene, renderer, quality) {
   main.level = 0.85;
   signs.push(main);
   const insert = neonSign([{ text: 'INSERT COIN', x: 0.5, y: 0.5, color: '#ffad42', size: 120 }], { width: 3, height: 0.45 });
-  insert.mesh.position.set(minX + 0.03, 2.6, -1.6);
+  insert.mesh.position.set(minX + 0.03, 2.6, -2.1);
   insert.mesh.rotation.y = Math.PI / 2;
   signs.push(insert);
   const high = neonSign([{ text: 'HIGH SCORE', x: 0.5, y: 0.5, color: '#4cc9ff', size: 120 }], { width: 2.8, height: 0.45 });
