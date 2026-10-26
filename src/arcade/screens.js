@@ -187,23 +187,35 @@ export class ArcadeScreen {
   draw_projects(t) {
     const ctx = this.ctx;
     this.starfield(8);
-    this.text('SELECT STAGE', W / 2, 30, { size: 20, align: 'center', glow: 14 });
+    this.text('SELECT STAGE', W / 2, 22, { size: 20, align: 'center', glow: 14 });
     const tiles = [
-      { x: 40, label: 'FANTASY FOOTBALL AI', size: 9, sub: 'ACTIVE', color: '#b388ff' },
-      { x: 272, label: 'BAJAZZO', sub: 'PROTOTYPE', color: '#ffad42' },
+      { lines: ['FANTASY', 'FOOTBALL AI'], sub: 'ACTIVE', color: '#b388ff', art: 'pitch' },
+      { lines: ['BAJAZZO'], sub: 'PROTOTYPE', color: '#ffad42', art: 'cloche' },
+      { lines: ['VALGOMAT'], sub: 'LIVE', color: '#ffe066', art: 'ballot' },
+      { lines: ['SIGDOCTOR'], sub: 'PROTOTYPE', color: '#ff6b5e', art: 'terminal' },
     ];
-    const active = Math.floor(t / 1.6) % 2;
+    const tw = 220;
+    const th = 104;
+    const active = Math.floor(t / 1.6) % tiles.length;
     tiles.forEach((tile, i) => {
-      const y = 82;
+      const x = i % 2 ? 262 : 30;
+      const y = i < 2 ? 58 : 176;
       ctx.fillStyle = withAlpha(tile.color, 0.1);
-      ctx.fillRect(tile.x, y, 200, 180);
+      ctx.fillRect(x, y, tw, th);
       ctx.strokeStyle = withAlpha(tile.color, 0.55);
       ctx.lineWidth = 2;
-      ctx.strokeRect(tile.x, y, 200, 180);
-      if (i === 0) this.miniPitch(tile.x + 30, y + 22, 140, 92, tile.color, t);
-      else this.miniCloche(tile.x + 100, y + 70, tile.color, t);
-      this.text(tile.label, tile.x + 100, y + 128 + (14 - (tile.size || 14)) / 2, { size: tile.size || 14, align: 'center', color: tile.color });
-      this.text(tile.sub, tile.x + 100, y + 152, { size: 20, font: CRT_FONT, align: 'center', color: '#ffffff', glow: 4 });
+      ctx.strokeRect(x, y, tw, th);
+      if (tile.art === 'pitch') this.miniPitch(x + 10, y + 22, 70, 60, tile.color, t);
+      else if (tile.art === 'cloche') {
+        ctx.save();
+        ctx.translate(x + 45, y + 62);
+        ctx.scale(0.5, 0.5);
+        this.miniCloche(0, 0, tile.color, t);
+        ctx.restore();
+      } else if (tile.art === 'ballot') this.miniBallot(x + 10, y + 22, 70, 60, tile.color, t);
+      else this.miniTerminal(x + 10, y + 22, 70, 60, tile.color, t);
+      tile.lines.forEach((line, j) => this.text(line, x + 92, y + 24 + j * 16, { size: 10, color: tile.color }));
+      this.text(tile.sub, x + 92, y + 64, { size: 20, font: CRT_FONT, color: '#ffffff', glow: 4 });
       if (i === active) {
         const pulse = this.blink(0.4) ? 1 : 0.5;
         ctx.save();
@@ -211,13 +223,44 @@ export class ArcadeScreen {
         ctx.shadowColor = this.color;
         ctx.shadowBlur = 14;
         ctx.lineWidth = 4;
-        ctx.strokeRect(tile.x - 8, y - 8, 216, 196);
+        ctx.strokeRect(x - 6, y - 6, tw + 12, th + 12);
         ctx.restore();
-        this.text('▼', tile.x + 100, y - 30 + Math.round(Math.sin(t * 6) * 3), { size: 16, align: 'center', color: '#ffffff' });
       }
     });
-    if (this.blink(1)) this.text('PRESS START', W / 2, 310, { size: 14, align: 'center' });
-    this.text('2 STAGES UNLOCKED', W / 2, 340, { size: 22, font: CRT_FONT, align: 'center', color: this.bright, glow: 3 });
+    if (this.blink(1)) this.text('PRESS START', W / 2, 300, { size: 14, align: 'center' });
+    this.text(`${tiles.length} STAGES UNLOCKED`, W / 2, 330, { size: 22, font: CRT_FONT, align: 'center', color: this.bright, glow: 3 });
+  }
+
+  miniBallot(x, y, w, h, color, t) {
+    const ctx = this.ctx;
+    // Nine party bars settling into a ranking.
+    const bw = Math.floor(w / 9) - 2;
+    for (let i = 0; i < 9; i++) {
+      const v = 0.25 + 0.7 * (0.5 + 0.5 * Math.sin(t * 0.9 + i * 1.9));
+      const bh = Math.round((h - 6) * v);
+      ctx.fillStyle = i % 3 ? withAlpha(color, 0.55) : color;
+      ctx.fillRect(x + i * (bw + 2), y + h - bh, bw, bh);
+    }
+    ctx.fillStyle = withAlpha('#ffffff', 0.6);
+    ctx.fillRect(x, y + h, w, 2);
+  }
+
+  miniTerminal(x, y, w, h, color, t) {
+    const ctx = this.ctx;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = withAlpha(color, 0.7);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+    this.text('> check', x + 5, y + 4, { size: 16, font: CRT_FONT, color: '#ffffff', glow: 2 });
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = withAlpha(color, 0.35);
+      ctx.fillRect(x + 6, y + 22 + i * 8, 22 + ((i * 17) % 30), 4);
+    }
+    // Cycle through the verdicts SigDoctor can return.
+    const verdicts = [['READY', '#8ce7bd'], ['PARTIAL', '#ffd166'], ['BLIND', color]];
+    const [word, tone] = verdicts[Math.floor(t / 1.2) % verdicts.length];
+    this.text(word, x + 5, y + h - 16, { size: 16, font: CRT_FONT, color: tone, glow: 4 });
   }
 
   miniPitch(x, y, w, h, color, t) {
@@ -321,7 +364,7 @@ export class ArcadeScreen {
       ctx.fillStyle = this.color;
       ctx.fillRect(cx + 44, y + 4, Math.round(120 * v), 14);
     });
-    const ticker = '   TRANSFERS  ·  CAPTAINCY  ·  SQUAD PLANNING  ·  DATA + STATISTICS  ·';
+    const ticker = '   TRANSFERS  ·  CAPTAINCY  ·  CHIPS  ·  LIVE POINTS  ·  MINI-LEAGUES  ·';
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 332, W, 40);
