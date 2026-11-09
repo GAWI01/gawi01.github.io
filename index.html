@@ -2,225 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="description" content="Gabriel Witzøe — cybersecurity, software and AI projects. Step into the arcade.">
-    <meta name="theme-color" content="#06070b">
-    <title>Gabriel Witzøe — gawi.no</title>
-    <script>
-      // Pick 3D or 2D before first paint so neither layout flashes.
-      (function () {
-        var root = document.documentElement;
-        var gl = false;
-        try {
-          var c = document.createElement('canvas');
-          var ctx = c.getContext('webgl2');
-          gl = !!ctx;
-          var lose = ctx && ctx.getExtension('WEBGL_lose_context');
-          if (lose) lose.loseContext();
-        } catch (e) {}
-        var mode = new URLSearchParams(location.search).get('mode');
-        if (mode !== '2d' && mode !== '3d') {
-          try { mode = localStorage.getItem('gawi-mode'); } catch (e) { mode = null; }
-        }
-        if (mode !== '2d' && mode !== '3d') {
-          var smallTouch = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
-          var weak = (navigator.deviceMemory && navigator.deviceMemory <= 2) ||
-            (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
-          var saveData = navigator.connection && navigator.connection.saveData;
-          mode = smallTouch || weak || saveData ? '2d' : '3d';
-        }
-        if (!gl) mode = '2d';
-        root.dataset.mode = mode;
-        root.dataset.webgl = gl ? 'yes' : 'no';
-      })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Gabriel Witzøe: cybersecurity, software and AI projects.">
+    <meta name="theme-color" content="#0b0d10">
+    <title>Gabriel Witzøe</title>
+    <link rel="stylesheet" href="/src/style.css">
   </head>
   <body>
-    <!-- Arcade (3D). Built by src/arcade when data-mode="3d". -->
-    <div class="arcade" id="arcade" aria-label="Gabriel Witzøe's arcade">
-      <div class="arcade__stage" id="stage"></div>
+    <a class="skip" href="#main">Skip to content</a>
 
-      <div class="loader" id="loader" role="status" aria-live="polite">
-        <p class="loader__brand">gawi.no</p>
-        <p class="loader__title">Insert coin</p>
-        <div class="loader__bar"><span id="loader-bar"></span></div>
-        <p class="loader__hint" id="loader-hint">Powering up the cabinets…</p>
-      </div>
-
-      <header class="hud hud--top">
-        <a class="hud__brand" href="#/" data-home>
-          <span class="hud__name">Gabriel Witz<span class="oe">ø</span>e</span>
-          <span class="hud__tag">Cybersecurity · Software · AI</span>
-        </a>
-        <div class="hud__actions">
-          <button class="hud__btn" type="button" id="sound-toggle" aria-pressed="false">Sound off</button>
-          <button class="hud__btn" type="button" data-set-mode="2d">2D view</button>
-        </div>
-      </header>
-
-      <nav class="hud hud--bottom" aria-label="Arcade machines">
-        <p class="hud__hint" id="hud-hint">Drag to look around · click a machine to play</p>
-        <ul class="machine-nav" id="machine-nav"></ul>
-      </nav>
-
-      <div class="hover-tag" id="hover-tag" aria-hidden="true">
-        <span class="hover-tag__label"></span>
-        <span class="hover-tag__cta">Press start</span>
-      </div>
-
-      <div class="crt-ui" id="crt-ui" role="dialog" aria-modal="true" aria-labelledby="crt-title" hidden>
-        <div class="crt-ui__frame">
-          <header class="crt-ui__bar">
-            <button class="crt-ui__back" type="button" id="crt-back"><span aria-hidden="true">◀</span> Back <kbd>Esc</kbd></button>
-            <span class="crt-ui__label" id="crt-title"></span>
-          </header>
-          <div class="crt-ui__content" id="crt-content" tabindex="-1"></div>
-        </div>
-      </div>
-
-      <div class="game-hud" id="game-hud" tabindex="-1" role="dialog" aria-modal="false" aria-labelledby="game-title" hidden>
-        <header class="game-hud__bar">
-          <button class="crt-ui__back" type="button" id="game-back"><span aria-hidden="true">◀</span> Back <kbd>Esc</kbd></button>
-          <h2 class="game-hud__title" id="game-title">Hoop Fever</h2>
-          <dl class="game-hud__stats" aria-live="polite">
-            <div><dt>Score</dt><dd id="hoops-score">0</dd></div>
-            <div><dt>Time</dt><dd id="hoops-time">45</dd></div>
-            <div><dt>Best</dt><dd id="hoops-best">0</dd></div>
-          </dl>
-        </header>
-        <div class="game-hud__meter" aria-hidden="true"><span class="game-hud__sweet"></span><span class="game-hud__fill" id="hoops-power"></span></div>
-        <p class="game-hud__hint" id="hoops-hint">Hold to charge, let go in the green · aim with the mouse</p>
-      </div>
-    </div>
-
-    <!-- Light 2D site. Default without JavaScript, on phones and low-end devices, and the content source for the arcade screens. -->
-    <div class="site" id="site">
-      <header class="site__hero">
-        <p class="eyebrow">gawi.no</p>
-        <h1>Gabriel Witz<span class="oe">ø</span>e</h1>
-        <p class="specialties">Cybersecurity <span>·</span> Software <span>·</span> AI</p>
-        <p class="intro">Building practical tools, software and security projects.</p>
-        <div class="site__actions">
-          <button class="pixel-btn" type="button" data-set-mode="3d" data-needs-webgl>Enter the 3D arcade</button>
-        </div>
-        <nav class="site__nav" aria-label="Sections">
-          <a href="#/about">About</a>
-          <a href="#/projects">Projects</a>
-          <a href="#/fantasy-football-ai">Fantasy Football AI</a>
-          <a href="#/bajazzo">Bajazzo</a>
-          <a href="#/contact">Contact</a>
-          <a href="#/snake">Snake</a>
+    <header class="topbar">
+      <div class="wrap topbar__inner">
+        <a class="brand" href="#top">Gabriel Witzøe</a>
+        <nav class="nav" aria-label="Sections">
+          <a href="#about">About</a>
+          <a href="#projects">Projects</a>
+          <a href="#contact">Contact</a>
         </nav>
-      </header>
+      </div>
+    </header>
 
-      <main class="site__sections">
-        <section class="sec" id="about" style="--c: #8ce7bd" data-label="About" data-marquee="ABOUT" data-screen="about" aria-labelledby="about-title">
-          <p class="sec__eyebrow">Profile</p>
-          <h2 class="sec__title" id="about-title">Gabriel Witz<span class="oe">ø</span>e</h2>
-          <p class="sec__lead">Cybersecurity <span>·</span> Software <span>·</span> AI</p>
-          <p>Building practical tools, software and security projects.</p>
-          <dl class="sec__stats">
-            <div><dt>Class</dt><dd>Cybersecurity</dd></div>
-            <div><dt>Skills</dt><dd>Software · AI</dd></div>
-            <div><dt>Base</dt><dd>gawi.no</dd></div>
+    <main id="main">
+      <section class="hero wrap" id="top">
+        <p class="eyebrow">Cybersecurity · Software · AI</p>
+        <h1>Hi, I'm Gabriel Witzøe.</h1>
+        <p class="lead">I build practical tools, software and security projects.</p>
+        <div class="actions">
+          <a class="btn btn--primary" href="#projects">See my projects</a>
+          <a class="btn" href="#contact">Get in touch</a>
+        </div>
+      </section>
+
+      <section class="section wrap" id="about" aria-labelledby="about-title">
+        <h2 id="about-title">About</h2>
+        <div class="about">
+          <p>I work across cybersecurity, software and AI, and I like building practical tools. Right now I'm working on Fantasy Football AI, a data-driven Fantasy Premier League assistant, and Bajazzo, an ordering platform for restaurants and catering.</p>
+          <dl class="facts">
+            <div><dt>Focus</dt><dd>Cybersecurity</dd></div>
+            <div><dt>Also</dt><dd>Software · AI</dd></div>
+            <div><dt>Based at</dt><dd>gawi.no</dd></div>
           </dl>
-          <p class="sec__links">
-            <a class="pixel-btn" href="#/projects">See projects</a>
-            <a class="pixel-btn pixel-btn--ghost" href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub ↗</a>
-          </p>
-        </section>
+        </div>
+      </section>
 
-        <section class="sec" id="projects" style="--c: #4cc9ff" data-label="Projects" data-marquee="PROJECTS" data-screen="projects" aria-labelledby="projects-title">
-          <p class="sec__eyebrow">Selected work</p>
-          <h2 class="sec__title" id="projects-title">Projects</h2>
-          <ul class="stage-list">
-            <li class="stage" style="--c: #b388ff">
-              <div class="stage__top">
-                <h3>Fantasy Football AI</h3>
-                <span class="status status--active">Active project</span>
-              </div>
-              <p>Fantasy Premier League analysis tool using data and statistics to support transfer, captaincy and squad decisions.</p>
-              <p class="stage__stack">Python · FastAPI · Next.js · TypeScript</p>
-              <p class="stage__links">
-                <a class="pixel-btn" href="#/fantasy-football-ai">Play stage</a>
-                <a class="pixel-btn pixel-btn--ghost" href="https://fantasyfootball-ai.vercel.app" target="_blank" rel="noreferrer">Visit Fantasy Football AI ↗</a>
-              </p>
-            </li>
-            <li class="stage" style="--c: #ffad42">
-              <div class="stage__top">
-                <h3>Bajazzo</h3>
-                <span class="status">Prototype / In development</span>
-              </div>
-              <p>Prototype restaurant and catering platform in development, exploring online ordering, product management and administrative functionality.</p>
-              <p class="stage__stack">Next.js · Supabase · Vercel</p>
-              <p class="stage__links">
-                <a class="pixel-btn" href="#/bajazzo">Play stage</a>
-                <a class="pixel-btn pixel-btn--ghost" href="https://bajazzo-platform.vercel.app/" target="_blank" rel="noreferrer">Visit Bajazzo ↗</a>
-              </p>
-            </li>
-          </ul>
-        </section>
+      <section class="section wrap" id="projects" aria-labelledby="projects-title">
+        <h2 id="projects-title">Projects</h2>
+        <ul class="projects">
+          <li class="card">
+            <div class="card__top">
+              <h3>Fantasy Football AI</h3>
+              <span class="badge badge--live">Active</span>
+            </div>
+            <p>A Fantasy Premier League analysis tool that uses data and statistics to support transfer, captaincy and squad decisions.</p>
+            <ul class="tags" aria-label="Built with">
+              <li>Python</li><li>FastAPI</li><li>Next.js</li><li>TypeScript</li>
+            </ul>
+            <a class="card__link" href="https://fantasyfootball-ai.vercel.app" target="_blank" rel="noreferrer">Visit Fantasy Football AI <span aria-hidden="true">↗</span></a>
+          </li>
+          <li class="card">
+            <div class="card__top">
+              <h3>Bajazzo</h3>
+              <span class="badge">In development</span>
+            </div>
+            <p>A prototype restaurant and catering platform exploring online ordering, product management and admin tools.</p>
+            <ul class="tags" aria-label="Built with">
+              <li>Next.js</li><li>Supabase</li><li>Vercel</li>
+            </ul>
+            <a class="card__link" href="https://bajazzo-platform.vercel.app/" target="_blank" rel="noreferrer">Visit Bajazzo <span aria-hidden="true">↗</span></a>
+          </li>
+        </ul>
+      </section>
 
-        <section class="sec" id="fantasy-football-ai" style="--c: #b388ff" data-label="Fantasy Football AI" data-marquee="FANTASY FOOTBALL AI" data-screen="fpl" aria-labelledby="fpl-title">
-          <p class="sec__eyebrow">Stage 1 · <span class="status status--active">Active project</span></p>
-          <h2 class="sec__title" id="fpl-title">Fantasy Football AI</h2>
-          <p class="sec__lead">Fantasy Premier League analysis tool using data and statistics to support transfer, captaincy and squad decisions.</p>
-          <dl class="sec__stats">
-            <div><dt>Transfers</dt><dd>Data-backed suggestions</dd></div>
-            <div><dt>Captaincy</dt><dd>Statistical picks</dd></div>
-            <div><dt>Squad</dt><dd>Decision support</dd></div>
-          </dl>
-          <ul class="chips" aria-label="Stack">
-            <li>Python</li><li>FastAPI</li><li>Next.js</li><li>TypeScript</li>
-          </ul>
-          <p class="sec__links">
-            <a class="pixel-btn" href="https://fantasyfootball-ai.vercel.app" target="_blank" rel="noreferrer">Visit Fantasy Football AI ↗</a>
-          </p>
-        </section>
+      <section class="section wrap" id="contact" aria-labelledby="contact-title">
+        <h2 id="contact-title">Contact</h2>
+        <p class="lead lead--small">Want to talk security, software or AI? Find me here.</p>
+        <div class="actions">
+          <a class="btn btn--primary" href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+          <a class="btn" href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+    </main>
 
-        <section class="sec" id="bajazzo" style="--c: #ffad42" data-label="Bajazzo" data-marquee="BAJAZZO" data-screen="bajazzo" aria-labelledby="bajazzo-title">
-          <p class="sec__eyebrow">Stage 2 · <span class="status">Prototype / In development</span></p>
-          <h2 class="sec__title" id="bajazzo-title">Bajazzo</h2>
-          <p class="sec__lead">Prototype restaurant and catering platform in development, exploring online ordering, product management and administrative functionality.</p>
-          <dl class="sec__stats">
-            <div><dt>Ordering</dt><dd>Online orders</dd></div>
-            <div><dt>Products</dt><dd>Menu management</dd></div>
-            <div><dt>Admin</dt><dd>Back-office tools</dd></div>
-          </dl>
-          <ul class="chips" aria-label="Stack">
-            <li>Next.js</li><li>Supabase</li><li>Vercel</li>
-          </ul>
-          <p class="sec__links">
-            <a class="pixel-btn" href="https://bajazzo-platform.vercel.app/" target="_blank" rel="noreferrer">Visit Bajazzo ↗</a>
-          </p>
-        </section>
-
-        <section class="sec" id="contact" style="--c: #ff4fa3" data-label="Contact" data-marquee="CONTACT" data-screen="contact" aria-labelledby="contact-title">
-          <p class="sec__eyebrow">Contact</p>
-          <h2 class="sec__title" id="contact-title">Player 2, join in</h2>
-          <p class="sec__lead">Want to talk security, software or AI? Find me here.</p>
-          <ul class="contact-list">
-            <li><a class="pixel-btn" href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub ↗</a></li>
-            <li><a class="pixel-btn" href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn ↗</a></li>
-          </ul>
-        </section>
-
-        <section class="sec sec--game" id="snake" style="--c: #3dff7a" data-label="Snake" data-marquee="SNAKE" data-screen="snake" data-game="snake" aria-labelledby="snake-title">
-          <p class="sec__eyebrow">Bonus stage</p>
-          <h2 class="sec__title" id="snake-title">Snake</h2>
-          <p class="sec__lead">Eat, grow, don't bite yourself. Arrow keys, WASD or swipe.</p>
-          <div class="snake-mount" data-snake-mount></div>
-        </section>
-      </main>
-
-      <footer class="site__footer">
-        <p>© <span>2026</span> Gabriel Witzøe</p>
-        <nav aria-label="Social links">
-          <a href="https://github.com/GAWI01" target="_blank" rel="noreferrer">GitHub</a>
-          <a href="https://www.linkedin.com/in/gabriel-witz%C3%B8e-51384a275" target="_blank" rel="noreferrer">LinkedIn</a>
-        </nav>
-      </footer>
-    </div>
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <p>© <span id="year">2026</span> Gabriel Witzøe</p>
+        <p><a href="#top">Back to top ↑</a></p>
+      </div>
+    </footer>
 
     <script type="module" src="/src/main.js"></script>
   </body>
